@@ -1,3 +1,6 @@
 [submodule "src/ndnSIM"]
 	path = src/ndnSIM
 	url = https://github.com/named-data-ndnSIM/ndnSIM.git
+[submodule "contrib/basic-sim"]
+	path = contrib/basic-sim
+	url = git@github.com:snkas/basic-sim.git
