@@ -1,6 +1,8 @@
 Note:
-
-This is a custom and unsupported fork of NS-3 simulator (http://www.nsnam.org/).
+This is a custom and unsupported fork of NS-3 simulator with ndnSIM module and satellite modules (https://github.com/named-data-ndnSIM/ns-3-dev)
+`src/network/utils/sgi-hashmap.h` is reintroduced for backward compatability with newer ns-3 for satellite modules
+ndnSIM module is added directly as a submodule
+external modules was copied over from Hypatia (https://github.com/snkas/hypatia)
 
 **The code in this repository is frequently rebased on top of the latest ns-3-dev branch** 
 
