@@ -1,0 +1,3 @@
+[submodule "src/ndnSIM"]
+	path = src/ndnSIM
+	url = https://github.com/named-data-ndnSIM/ndnSIM.git
