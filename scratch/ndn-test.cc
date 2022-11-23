@@ -47,78 +47,128 @@ NodeContainer ReadSatellites(
   std::vector<Ptr<Satellite>> m_satellites)
 {
 
-    // Open file
-    std::ifstream fs;
-    fs.open(m_satellite_network_dir + "/tles.txt");
-    NS_ABORT_MSG_UNLESS(fs.is_open(), "File tles.txt could not be opened");
+  // Open file
+  std::ifstream fs;
+  fs.open(m_satellite_network_dir + "/tles.txt");
+  NS_ABORT_MSG_UNLESS(fs.is_open(), "File tles.txt could not be opened");
 
-    // First line:
-    // <orbits> <satellites per orbit>
-    std::string orbits_and_n_sats_per_orbit;
-    std::getline(fs, orbits_and_n_sats_per_orbit);
-    std::vector<std::string> res = split_string(orbits_and_n_sats_per_orbit, " ", 2);
-    int64_t num_orbits = parse_positive_int64(res[0]);
-    int64_t satellites_per_orbit = parse_positive_int64(res[1]);
+  // First line:
+  // <orbits> <satellites per orbit>
+  std::string orbits_and_n_sats_per_orbit;
+  std::getline(fs, orbits_and_n_sats_per_orbit);
+  std::vector<std::string> res = split_string(orbits_and_n_sats_per_orbit, " ", 2);
+  int64_t num_orbits = parse_positive_int64(res[0]);
+  int64_t satellites_per_orbit = parse_positive_int64(res[1]);
 
-    // Create the nodes
-    NodeContainer m_satelliteNodes;
-    m_satelliteNodes.Create(num_orbits * satellites_per_orbit);
+  // Create the nodes
+  NodeContainer m_satelliteNodes;
+  m_satelliteNodes.Create(num_orbits * satellites_per_orbit);
 
-    // Associate satellite mobility model with each node
-    int64_t counter = 0;
-    std::string name, tle1, tle2;
-    while (std::getline(fs, name)) {
-        std::getline(fs, tle1);
-        std::getline(fs, tle2);
+  // Associate satellite mobility model with each node
+  int64_t counter = 0;
+  std::string name, tle1, tle2;
+  while (std::getline(fs, name)) {
+    std::getline(fs, tle1);
+    std::getline(fs, tle2);
 
-        // Format:
-        // <name>
-        // <TLE line 1>
-        // <TLE line 2>
+    // Format:
+    // <name>
+    // <TLE line 1>
+    // <TLE line 2>
 
-        // Create satellite
-        Ptr<Satellite> satellite = CreateObject<Satellite>();
-        satellite->SetName(name);
-        satellite->SetTleInfo(tle1, tle2);
+    // Create satellite
+    Ptr<Satellite> satellite = CreateObject<Satellite>();
+    satellite->SetName(name);
+    satellite->SetTleInfo(tle1, tle2);
 
-        // Decide the mobility model of the satellite
-        MobilityHelper mobility;
-        if (m_satellite_network_force_static) {
-
-            // Static at the start of the epoch
-            mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
-            mobility.Install(m_satelliteNodes.Get(counter));
-            Ptr<MobilityModel> mobModel = m_satelliteNodes.Get(counter)->GetObject<MobilityModel>();
-            mobModel->SetPosition(satellite->GetPosition(satellite->GetTleEpoch()));
-
-        } else {
-
-            // Dynamic
-            mobility.SetMobilityModel(
-                    "ns3::SatellitePositionMobilityModel",
-                    "SatellitePositionHelper",
-                    SatellitePositionHelperValue(SatellitePositionHelper(satellite))
-            );
-            mobility.Install(m_satelliteNodes.Get(counter));
-
-        }
-
-        // Add to all satellites present
-        m_satellites.push_back(satellite);
-
-        counter++;
+    // Decide the mobility model of the satellite
+    MobilityHelper mobility;
+    if (m_satellite_network_force_static) {
+      // Static at the start of the epoch
+      mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+      mobility.Install(m_satelliteNodes.Get(counter));
+      Ptr<MobilityModel> mobModel = m_satelliteNodes.Get(counter)->GetObject<MobilityModel>();
+      mobModel->SetPosition(satellite->GetPosition(satellite->GetTleEpoch()));
+    } else {
+      // Dynamic
+      mobility.SetMobilityModel(
+              "ns3::SatellitePositionMobilityModel",
+              "SatellitePositionHelper",
+              SatellitePositionHelperValue(SatellitePositionHelper(satellite))
+      );
+      mobility.Install(m_satelliteNodes.Get(counter));
     }
 
-    // Check that exactly that number of satellites has been read in
-    if (counter != num_orbits * satellites_per_orbit) {
-        throw std::runtime_error("Number of satellites defined in the TLEs does not match");
-    }
-    // for (auto node : m_satelliteNodes) {
-    //   cout << node->GetId() << endl;
-    // }
-    fs.close();
-    return m_satelliteNodes;
+    // Add to all satellites present
+    m_satellites.push_back(satellite);
+
+    counter++;
+  }
+
+  // Check that exactly that number of satellites has been read in
+  if (counter != num_orbits * satellites_per_orbit) {
+      throw std::runtime_error("Number of satellites defined in the TLEs does not match");
+  }
+  // for (auto node : m_satelliteNodes) {
+  //   cout << node->GetId() << endl;
+  // }
+  fs.close();
+  return m_satelliteNodes;
 }
+
+NodeContainer ReadGroundStations(std::string m_satellite_network_dir, std::vector<Ptr<GroundStation> > m_groundStations)
+{
+
+  // Create a new file stream to open the file
+  std::ifstream fs;
+  fs.open(m_satellite_network_dir + "/ground_stations.txt");
+  NS_ABORT_MSG_UNLESS(fs.is_open(), "File ground_stations.txt could not be opened");
+  NodeContainer m_groundStationNodes;
+  // Read ground station from each line
+
+  std::string line;
+  while (std::getline(fs, line)) {
+
+    std::vector<std::string> res = split_string(line, ",", 8);
+
+    // All eight values
+    uint32_t gid = parse_positive_int64(res[0]);
+    std::string name = res[1];
+    double latitude = parse_double(res[2]);
+    double longitude = parse_double(res[3]);
+    double elevation = parse_double(res[4]);
+    double cartesian_x = parse_double(res[5]);
+    double cartesian_y = parse_double(res[6]);
+    double cartesian_z = parse_double(res[7]);
+    Vector cartesian_position(cartesian_x, cartesian_y, cartesian_z);
+
+    // Create ground station data holder
+    Ptr<GroundStation> gs = CreateObject<GroundStation>(
+      gid, name, latitude, longitude, elevation, cartesian_position
+    );
+    m_groundStations.push_back(gs);
+
+    // Create the node
+    m_groundStationNodes.Create(1);
+    if (m_groundStationNodes.GetN() != gid + 1) {
+      throw std::runtime_error("GID is not incremented each line");
+    }
+
+    // Install the constant mobility model on the node
+    MobilityHelper mobility;
+    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+    mobility.Install(m_groundStationNodes.Get(gid));
+    Ptr<MobilityModel> mobilityModel = m_groundStationNodes.Get(gid)->GetObject<MobilityModel>();
+    mobilityModel->SetPosition(cartesian_position);
+  }
+
+  fs.close();
+  // for (auto node : m_groundStationNodes) {
+  //   cout << node->GetId() << endl;
+  // }
+  return m_groundStationNodes;
+}
+
 
 int
 main(int argc, char* argv[])
@@ -153,6 +203,11 @@ main(int argc, char* argv[])
     m_satellite_network_dir,
     m_satellite_network_force_static,
     m_satellites
+  );
+
+  m_groundStationNodes = ReadGroundStations(
+    m_satellite_network_dir,
+    m_groundStations
   );
   // Installing
 
