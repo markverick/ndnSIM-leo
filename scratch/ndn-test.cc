@@ -41,12 +41,56 @@
 
 namespace ns3 {
 
-NodeContainer ReadSatellites(
-  std::string m_satellite_network_dir,
-  bool m_satellite_network_force_static,
-  std::vector<Ptr<Satellite>> m_satellites)
-{
+// Input
+Ptr<BasicSimulation> m_basicSimulation;       //<! Basic simulation instance
+std::string m_satellite_network_dir;          //<! Directory containing satellite network information
+std::string m_satellite_network_routes_dir;   //<! Directory containing the routes over time of the network
+bool m_satellite_network_force_static;        //<! True to disable satellite movement and basically run
+                                              //   it static at t=0 (like a static network)
 
+// Generated state
+NodeContainer m_allNodes;                           //!< All nodes
+NodeContainer m_groundStationNodes;                 //!< Ground station nodes
+NodeContainer m_satelliteNodes;                     //!< Satellite nodes
+std::vector<Ptr<GroundStation> > m_groundStations;  //!< Ground stations
+std::vector<Ptr<Satellite>> m_satellites;           //<! Satellites
+std::set<int64_t> m_endpoints;                      //<! Endpoint ids = ground station ids
+
+// ISL devices
+NetDeviceContainer m_islNetDevices;
+std::vector<std::pair<int32_t, int32_t>> m_islFromTo;
+std::map<std::string, std::string> m_config;
+
+// Values
+double m_isl_data_rate_megabit_per_s;
+double m_gsl_data_rate_megabit_per_s;
+int64_t m_isl_max_queue_size_pkts;
+int64_t m_gsl_max_queue_size_pkts;
+bool m_enable_isl_utilization_tracking;
+int64_t m_isl_utilization_tracking_interval_ns;
+
+std::string getConfigParamOrDefault(std::string key, std::string default_value) {
+  auto it = m_config.find(key);
+  if (it != m_config.end())
+    return it->second;
+  return default_value;
+}
+
+void readConfig() {
+  // Read the config
+  m_config = read_config("scratch/config_ns3.properties");
+
+  // Print full config
+  printf("CONFIGURATION\n-----\nKEY                                       VALUE\n");
+  std::map<std::string, std::string>::iterator it;
+  for ( it = m_config.begin(); it != m_config.end(); it++ ) {
+      printf("%-40s  %s\n", it->first.c_str(), it->second.c_str());
+  }
+  printf("\n");
+}
+
+void ReadSatellites()
+{
   // Open file
   std::ifstream fs;
   fs.open(m_satellite_network_dir + "/tles.txt");
@@ -59,9 +103,7 @@ NodeContainer ReadSatellites(
   std::vector<std::string> res = split_string(orbits_and_n_sats_per_orbit, " ", 2);
   int64_t num_orbits = parse_positive_int64(res[0]);
   int64_t satellites_per_orbit = parse_positive_int64(res[1]);
-
   // Create the nodes
-  NodeContainer m_satelliteNodes;
   m_satelliteNodes.Create(num_orbits * satellites_per_orbit);
 
   // Associate satellite mobility model with each node
@@ -109,21 +151,16 @@ NodeContainer ReadSatellites(
   if (counter != num_orbits * satellites_per_orbit) {
       throw std::runtime_error("Number of satellites defined in the TLEs does not match");
   }
-  // for (auto node : m_satelliteNodes) {
-  //   cout << node->GetId() << endl;
-  // }
   fs.close();
-  return m_satelliteNodes;
 }
 
-NodeContainer ReadGroundStations(std::string m_satellite_network_dir, std::vector<Ptr<GroundStation> > m_groundStations)
+void ReadGroundStations()
 {
 
   // Create a new file stream to open the file
   std::ifstream fs;
   fs.open(m_satellite_network_dir + "/ground_stations.txt");
   NS_ABORT_MSG_UNLESS(fs.is_open(), "File ground_stations.txt could not be opened");
-  NodeContainer m_groundStationNodes;
   // Read ground station from each line
 
   std::string line;
@@ -166,9 +203,76 @@ NodeContainer ReadGroundStations(std::string m_satellite_network_dir, std::vecto
   // for (auto node : m_groundStationNodes) {
   //   cout << node->GetId() << endl;
   // }
-  return m_groundStationNodes;
 }
 
+void ReadISLs()
+{
+
+  // Link helper
+  PointToPointLaserHelper p2p_laser_helper;
+  std::string max_queue_size_str = format_string("%" PRId64 "p", m_isl_max_queue_size_pkts);
+  p2p_laser_helper.SetQueue("ns3::DropTailQueue<Packet>", "MaxSize", QueueSizeValue(QueueSize(max_queue_size_str)));
+  p2p_laser_helper.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (std::to_string(m_isl_data_rate_megabit_per_s) + "Mbps")));
+  std::cout << "    >> ISL data rate........ " << m_isl_data_rate_megabit_per_s << " Mbit/s" << std::endl;
+  std::cout << "    >> ISL max queue size... " << m_isl_max_queue_size_pkts << " packets" << std::endl;
+
+  // Traffic control helper
+  TrafficControlHelper tch_isl;
+  tch_isl.SetRootQueueDisc("ns3::FifoQueueDisc", "MaxSize", QueueSizeValue(QueueSize("1p"))); // Will be removed later any case
+
+  // Open file
+  std::ifstream fs;
+  fs.open(m_satellite_network_dir + "/isls.txt");
+  NS_ABORT_MSG_UNLESS(fs.is_open(), "File isls.txt could not be opened");
+
+  // Read ISL pair from each line
+  std::string line;
+  int counter = 0;
+  while (std::getline(fs, line)) {
+      std::vector<std::string> res = split_string(line, " ", 2);
+
+      // Retrieve satellite identifiers
+      int32_t sat0_id = parse_positive_int64(res.at(0));
+      int32_t sat1_id = parse_positive_int64(res.at(1));
+      Ptr<Satellite> sat0 = m_satellites.at(sat0_id);
+      Ptr<Satellite> sat1 = m_satellites.at(sat1_id);
+
+      // Install a p2p laser link between these two satellites
+      NodeContainer c;
+      c.Add(m_satelliteNodes.Get(sat0_id));
+      c.Add(m_satelliteNodes.Get(sat1_id));
+      NetDeviceContainer netDevices = p2p_laser_helper.Install(c);
+
+      // Install traffic control helper
+      // tch_isl.Install(netDevices.Get(0));
+      // tch_isl.Install(netDevices.Get(1));
+
+      // Assign some IP address (nothing smart, no aggregation, just some IP address)
+      // m_ipv4_helper.Assign(netDevices);
+      // m_ipv4_helper.NewNetwork();
+
+      // Remove the traffic control layer (must be done here, else the Ipv4 helper will assign a default one)
+      // TrafficControlHelper tch_uninstaller;
+      // tch_uninstaller.Uninstall(netDevices.Get(0));
+      // tch_uninstaller.Uninstall(netDevices.Get(1));
+
+      // Utilization tracking
+      if (m_enable_isl_utilization_tracking) {
+        netDevices.Get(0)->GetObject<PointToPointLaserNetDevice>()->EnableUtilizationTracking(m_isl_utilization_tracking_interval_ns);
+        netDevices.Get(1)->GetObject<PointToPointLaserNetDevice>()->EnableUtilizationTracking(m_isl_utilization_tracking_interval_ns);
+
+        m_islNetDevices.Add(netDevices.Get(0));
+        m_islFromTo.push_back(std::make_pair(sat0_id, sat1_id));
+        m_islNetDevices.Add(netDevices.Get(1));
+        m_islFromTo.push_back(std::make_pair(sat1_id, sat0_id));
+      }
+      counter += 1;
+  }
+  fs.close();
+
+  // Completed
+  std::cout << "    >> Created " << std::to_string(counter) << " ISL(s)" << std::endl;
+}
 
 int
 main(int argc, char* argv[])
@@ -178,17 +282,11 @@ main(int argc, char* argv[])
   Config::SetDefault("ns3::PointToPointChannel::Delay", StringValue("10ms"));
   Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
 
-  std::string m_satellite_network_dir = "scratch/network_dir";                   //<! Directory containing satellite network information
-  std::string m_satellite_network_routes_dir = "scratch/network_dir/routes_dir"; //<! Directory containing the routes over time of the network
-  bool m_satellite_network_force_static = false;        //<! True to disable satellite movement and basically run
-                                                        //   it static at t=0 (like a static network)
-  // Generated state
-  NodeContainer m_allNodes;                           //!< All nodes
-  NodeContainer m_groundStationNodes;                 //!< Ground station nodes
-  NodeContainer m_satelliteNodes;                     //!< Satellite nodes
-  std::vector<Ptr<GroundStation> > m_groundStations;  //!< Ground stations
-  std::vector<Ptr<Satellite>> m_satellites;           //<! Satellites
-  std::set<int64_t> m_endpoints;                      //<! Endpoint ids = ground station ids
+  // Configuration
+  readConfig();
+  m_satellite_network_dir = getConfigParamOrDefault("satellite_network_dir", "network_dir");
+  m_satellite_network_routes_dir =  getConfigParamOrDefault("satellite_network_routes_dir", "network_dir/routes_dir");
+  m_satellite_network_force_static = parse_boolean(getConfigParamOrDefault("satellite_network_force_static", "false"));
 
   // Read optional command-line parameters (e.g., enable visualizer with ./waf --run=<> --visualize
   CommandLine cmd;
@@ -199,18 +297,31 @@ main(int argc, char* argv[])
 
   // Reading nodes
   
-  m_satelliteNodes = ReadSatellites(
-    m_satellite_network_dir,
-    m_satellite_network_force_static,
-    m_satellites
-  );
+  ReadSatellites();
 
-  m_groundStationNodes = ReadGroundStations(
-    m_satellite_network_dir,
-    m_groundStations
-  );
-  // Installing
+  ReadGroundStations();
 
+  // Only ground stations are valid endpoints
+  for (uint32_t i = 0; i < m_groundStations.size(); i++) {
+      m_endpoints.insert(m_satelliteNodes.GetN() + i);
+  } 
+
+  m_allNodes.Add(m_satelliteNodes);
+  m_allNodes.Add(m_groundStationNodes);
+  std::cout << "  > Number of nodes............. " << m_allNodes.GetN() << std::endl;
+  
+  // Link settings
+  m_isl_data_rate_megabit_per_s = parse_positive_double(getConfigParamOrDefault("isl_data_rate_megabit_per_s", "10000"));
+  m_gsl_data_rate_megabit_per_s = parse_positive_double(getConfigParamOrDefault("gsl_data_rate_megabit_per_s", "10000"));
+  m_isl_max_queue_size_pkts = parse_positive_int64(getConfigParamOrDefault("isl_max_queue_size_pkts", "10000"));
+  m_gsl_max_queue_size_pkts = parse_positive_int64(getConfigParamOrDefault("gsl_max_queue_size_pkts", "10000"));
+
+  ReadISLs();
+
+  // Install NDN stack on all nodes
+  ndn::StackHelper ndnHelper;
+  ndnHelper.Install(m_allNodes);
+  std::cout << "  > Installed NDN stacks" << std::endl;
 
   // // Install NDN stack on all nodes
   // ndn::StackHelper ndnHelper;
