@@ -323,35 +323,32 @@ main(int argc, char* argv[])
   ndnHelper.Install(m_allNodes);
   std::cout << "  > Installed NDN stacks" << std::endl;
 
-  // // Install NDN stack on all nodes
-  // ndn::StackHelper ndnHelper;
-  // ndnHelper.SetDefaultRoutes(true);
-  // ndnHelper.InstallAll();
+  // Choosing forwarding strategy
+  ndn::StrategyChoiceHelper::InstallAll("/prefix", "/localhost/nfd/strategy/multicast");
 
-  // // Choosing forwarding strategy
-  // ndn::StrategyChoiceHelper::InstallAll("/prefix", "/localhost/nfd/strategy/multicast");
+  // Installing applications
+  Ptr<Node> node1 = m_groundStationNodes.Get(35); // 35,Krung-Thep-(Bangkok)
+  Ptr<Node> node2 = m_groundStationNodes.Get(20); // 20, Los-Angeles-Long-Beach-Santa-Ana
+  std::string prefix1 = "/uid-" + 20;
+  std::string prefix2 = "/uid-" + 35;
+  // Consumer
+  ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
+  // Consumer will request /prefix/0, /prefix/1, ...
+  consumerHelper.SetPrefix(prefix1);
+  consumerHelper.SetAttribute("Frequency", StringValue("2")); // 10 interests a second
+  consumerHelper.Install(node1); // first node
 
-  // // Installing applications
+  // Producer
+  ndn::AppHelper producerHelper("ns3::ndn::Producer");
+  // Producer will reply to all requests starting with /prefix
+  producerHelper.SetPrefix(prefix1);
+  producerHelper.SetAttribute("PayloadSize", StringValue("1024"));
+  producerHelper.Install(node2); // last node
 
-  // // Consumer
-  // ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
-  // // Consumer will request /prefix/0, /prefix/1, ...
-  // consumerHelper.SetPrefix("/prefix");
-  // consumerHelper.SetAttribute("Frequency", StringValue("10")); // 10 interests a second
-  // auto apps = consumerHelper.Install(nodes.Get(0));                        // first node
-  // apps.Stop(Seconds(10.0)); // stop the consumer app at 10 seconds mark
+  Simulator::Stop(Seconds(20.0));
 
-  // // Producer
-  // ndn::AppHelper producerHelper("ns3::ndn::Producer");
-  // // Producer will reply to all requests starting with /prefix
-  // producerHelper.SetPrefix("/prefix");
-  // producerHelper.SetAttribute("PayloadSize", StringValue("1024"));
-  // producerHelper.Install(nodes.Get(2)); // last node
-
-  // Simulator::Stop(Seconds(20.0));
-
-  // Simulator::Run();
-  // Simulator::Destroy();
+  Simulator::Run();
+  Simulator::Destroy();
 
   return 0;
 }
