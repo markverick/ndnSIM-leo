@@ -327,10 +327,10 @@ main(int argc, char* argv[])
   ndn::StrategyChoiceHelper::InstallAll("/prefix", "/localhost/nfd/strategy/multicast");
 
   // Installing applications
-  Ptr<Node> node1 = m_groundStationNodes.Get(35); // 35,Krung-Thep-(Bangkok)
-  Ptr<Node> node2 = m_groundStationNodes.Get(20); // 20, Los-Angeles-Long-Beach-Santa-Ana
-  std::string prefix1 = "/uid-" + 20;
-  std::string prefix2 = "/uid-" + 35;
+  Ptr<Node> node1 = m_allNodes.Get(m_satellites.size() + 35); // 35,Krung-Thep-(Bangkok)
+  Ptr<Node> node2 = m_allNodes.Get(m_satellites.size() + 20); // 20, Los-Angeles-Long-Beach-Santa-Ana
+  std::string prefix1 = "/prefix";
+  std::string prefix2 = "/prefix";
   // Consumer
   ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
   // Consumer will request /prefix/0, /prefix/1, ...
