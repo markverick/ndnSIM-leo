@@ -57,6 +57,7 @@ std::vector<Ptr<Satellite>> m_satellites;           //<! Satellites
 std::set<int64_t> m_endpoints;                      //<! Endpoint ids = ground station ids
 
 // ISL devices
+Ipv4AddressHelper m_ipv4_helper;
 NetDeviceContainer m_islNetDevices;
 std::vector<std::pair<int32_t, int32_t>> m_islFromTo;
 std::map<std::string, std::string> m_config;
@@ -243,15 +244,15 @@ void ReadISLs()
       c.Add(m_satelliteNodes.Get(sat1_id));
       NetDeviceContainer netDevices = p2p_laser_helper.Install(c);
 
-      // Install traffic control helper
+      // // Install traffic control helper
       // tch_isl.Install(netDevices.Get(0));
       // tch_isl.Install(netDevices.Get(1));
 
-      // Assign some IP address (nothing smart, no aggregation, just some IP address)
+      // // Assign some IP address (nothing smart, no aggregation, just some IP address)
       // m_ipv4_helper.Assign(netDevices);
       // m_ipv4_helper.NewNetwork();
 
-      // Remove the traffic control layer (must be done here, else the Ipv4 helper will assign a default one)
+      // // Remove the traffic control layer (must be done here, else the Ipv4 helper will assign a default one)
       // TrafficControlHelper tch_uninstaller;
       // tch_uninstaller.Uninstall(netDevices.Get(0));
       // tch_uninstaller.Uninstall(netDevices.Get(1));
@@ -325,8 +326,10 @@ void CreateGSLs() {
   std::cout << "    >> Finished install GSL interfaces (interfaces, network devices, one shared channel)" << std::endl;
 
   // Install queueing disciplines
-  tch_gsl.Install(devices);
-  std::cout << "    >> Finished installing traffic control layer qdisc which will be removed later" << std::endl;
+  // std::cout << "XX\n";
+  // tch_gsl.Install(devices);
+  // std::cout << "YY\n";
+  // std::cout << "    >> Finished installing traffic control layer qdisc which will be removed later" << std::endl;
 
   // Assign IP addresses
   //
@@ -365,12 +368,12 @@ void CreateGSLs() {
   // std::cout << "    >> Finished assigning IPs" << std::endl;
 
   // Remove the traffic control layer (must be done here, else the Ipv4 helper will assign a default one)
-  TrafficControlHelper tch_uninstaller;
-  std::cout << "    >> Removing traffic control layers (qdiscs)..." << std::endl;
-  for (uint32_t i = 0; i < devices.GetN(); i++) {
-      tch_uninstaller.Uninstall(devices.Get(i));
-  }
-  std::cout << "    >> Finished removing GSL queueing disciplines" << std::endl;
+  // TrafficControlHelper tch_uninstaller;
+  // std::cout << "    >> Removing traffic control layers (qdiscs)..." << std::endl;
+  // for (uint32_t i = 0; i < devices.GetN(); i++) {
+  //     tch_uninstaller.Uninstall(devices.Get(i));
+  // }
+  // std::cout << "    >> Finished removing GSL queueing disciplines" << std::endl;
 
   // Check that all interfaces were created
   NS_ABORT_MSG_IF(total_num_gsl_ifs != devices.GetN(), "Not the expected amount of interfaces has been created.");
@@ -378,14 +381,43 @@ void CreateGSLs() {
   std::cout << "    >> GSL interfaces are setup" << std::endl;
 
 }
+void PopulateArpCaches() {
+
+    // ARP lookups hinder performance, and actually won't succeed, so to prevent that from happening,
+    // all GSL interfaces' IPs are added into an ARP cache
+
+    // ARP cache with all ground station and satellite GSL channel interface info
+    Ptr<ArpCache> arpAll = CreateObject<ArpCache>();
+    arpAll->SetAliveTimeout (Seconds(3600 * 24 * 365)); // Valid one year
+
+    // Satellite ARP entries
+    for (uint32_t i = 0; i < m_allNodes.GetN(); i++) {
+
+        // Information about all interfaces (TODO: Only needs to be GSL interfaces)
+        for (size_t j = 1; j < m_allNodes.Get(i)->GetObject<Ipv4>()->GetNInterfaces(); j++) {
+            Mac48Address mac48Address = Mac48Address::ConvertFrom(m_allNodes.Get(i)->GetObject<Ipv4>()->GetNetDevice(j)->GetAddress());
+            Ipv4Address ipv4Address = m_allNodes.Get(i)->GetObject<Ipv4>()->GetAddress(j, 0).GetLocal();
+
+            // Add the info of the GSL interface to the cache
+            ArpCache::Entry * entry = arpAll->Add(ipv4Address);
+            entry->SetMacAddress(mac48Address);
+
+            // Set a pointer to the ARP cache it should use (will be filled at the end of this function, it's only a pointer)
+            m_allNodes.Get(i)->GetObject<Ipv4L3Protocol>()->GetInterface(j)->SetAttribute("ArpCache", PointerValue(arpAll));
+
+        }
+
+    }
+
+}
 
 int
 main(int argc, char* argv[])
 {
   // setting default parameters for PointToPoint links and channels
-  Config::SetDefault("ns3::PointToPointNetDevice::DataRate", StringValue("1Mbps"));
-  Config::SetDefault("ns3::PointToPointChannel::Delay", StringValue("10ms"));
-  Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
+  // Config::SetDefault("ns3::PointToPointNetDevice::DataRate", StringValue("1Mbps"));
+  // Config::SetDefault("ns3::PointToPointChannel::Delay", StringValue("10ms"));
+  // Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
 
   // Configuration
   readConfig();
@@ -414,8 +446,15 @@ main(int argc, char* argv[])
   m_allNodes.Add(m_satelliteNodes);
   m_allNodes.Add(m_groundStationNodes);
   std::cout << "  > Number of nodes............. " << m_allNodes.GetN() << std::endl;
+
+  // Install NDN stack on all nodes
+  ndn::StackHelper ndnHelper;
+  // ndnHelper.SetDefaultRoutes(true);
+  ndnHelper.Install(m_allNodes);
+  std::cout << "  > Installed NDN stacks" << std::endl;
   
   // Link settings
+  m_ipv4_helper.SetBase ("10.0.0.0", "255.255.255.0");
   m_isl_data_rate_megabit_per_s = parse_positive_double(getConfigParamOrDefault("isl_data_rate_megabit_per_s", "10000"));
   m_gsl_data_rate_megabit_per_s = parse_positive_double(getConfigParamOrDefault("gsl_data_rate_megabit_per_s", "10000"));
   m_isl_max_queue_size_pkts = parse_positive_int64(getConfigParamOrDefault("isl_max_queue_size_pkts", "10000"));
@@ -423,18 +462,25 @@ main(int argc, char* argv[])
 
   ReadISLs();
 
-  // Install NDN stack on all nodes
-  ndn::StackHelper ndnHelper;
-  ndnHelper.SetDefaultRoutes(true);
-  ndnHelper.Install(m_allNodes);
-  std::cout << "  > Installed NDN stacks" << std::endl;
+  CreateGSLs();
+
+  // // ARP caches
+  // std::cout << "  > Populating ARP caches" << std::endl;
+  // PopulateArpCaches();
+
 
   // Choosing forwarding strategy
   ndn::StrategyChoiceHelper::InstallAll("/prefix", "/localhost/nfd/strategy/multicast");
 
+  // Installing global routing interface on all nodes
+  ndn::GlobalRoutingHelper ndnGlobalRoutingHelper;
+  ndnGlobalRoutingHelper.InstallAll();
+
   // Installing applications
-  Ptr<Node> node1 = m_allNodes.Get(m_satellites.size() + 35); // 35,Krung-Thep-(Bangkok)
-  Ptr<Node> node2 = m_allNodes.Get(m_satellites.size() + 20); // 20, Los-Angeles-Long-Beach-Santa-Ana
+  // Ptr<Node> node1 = m_groundStationNodes.Get(35); // 35,Krung-Thep-(Bangkok)
+  // Ptr<Node> node2 = m_groundStationNodes.Get(20); // 20, Los-Angeles-Long-Beach-Santa-Ana
+  Ptr<Node> node1 = m_allNodes.Get(1184); // 35,Krung-Thep-(Bangkok)
+  Ptr<Node> node2 = m_allNodes.Get(1306); // 20, Los-Angeles-Long-Beach-Santa-Ana
   std::string prefix1 = "/prefix";
   std::string prefix2 = "/prefix";
   // Consumer
@@ -450,6 +496,12 @@ main(int argc, char* argv[])
   producerHelper.SetPrefix(prefix1);
   producerHelper.SetAttribute("PayloadSize", StringValue("1024"));
   producerHelper.Install(node2); // last node
+
+  // Add /prefix origins to ndn::GlobalRouter
+  ndnGlobalRoutingHelper.AddOrigins(prefix1, node2);
+
+  // Calculate and install FIBs
+  ndn::GlobalRoutingHelper::CalculateRoutes();
 
   Simulator::Stop(Seconds(20.0));
 
