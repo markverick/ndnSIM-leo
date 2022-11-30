@@ -5,6 +5,9 @@
 #include "ns3/point-to-point-module.h"
 #include "ns3/ndnSIM-module.h"
 #include "ns3/names.h"
+#include "ns3/satellite-position-helper.h"
+#include "ns3/satellite-position-mobility-model.h"
+#include "ns3/mobility-helper.h"
 #include "read-data.h"
 
 // for LinkStatusControl::FailLinks and LinkStatusControl::UpLinks
@@ -20,10 +23,43 @@ main(int argc, char* argv[])
   // Loading data
   // Importing TLEs
   vector<leo::Tle> tles = leo::readTles("scratch/data/tles.txt");
-  
-  // Importing ground stations
   vector<leo::GroundStation> ground_stations = 
     leo::readGroundStations("scratch/data/ground_stations.txt", tles.size());
+  bool force_static = false;
+  NodeContainer nodes;
+  nodes.Create(tles.size() + ground_stations.size());
+  for (auto tle : tles) {
+    Ptr<Satellite> satellite = CreateObject<Satellite>();
+    satellite->SetName(tle.m_title);
+    satellite->SetTleInfo(tle.m_line1, tle.m_line2);
+    // Decide the mobility model of the satellite
+    MobilityHelper mobility;
+    if (force_static) {
+      // Static at the start of the epoch
+      mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+      mobility.Install(nodes.Get(tle.m_uid));
+      Ptr<MobilityModel> mobModel = nodes.Get(tle.m_uid)->GetObject<MobilityModel>();
+      mobModel->SetPosition(satellite->GetPosition(satellite->GetTleEpoch()));
+    } else {
+      // Dynamic
+      mobility.SetMobilityModel(
+              "ns3::SatellitePositionMobilityModel",
+              "SatellitePositionHelper",
+              SatellitePositionHelperValue(SatellitePositionHelper(satellite))
+      );
+      mobility.Install(nodes.Get(tle.m_uid));
+    }
+  }
+  
+  // Importing ground stations
+  for (auto gs : ground_stations) {
+    MobilityHelper mobility;
+    mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+    mobility.Install(nodes.Get(gs.m_uid));
+    Ptr<MobilityModel> mobilityModel = nodes.Get(gs.m_uid)->GetObject<MobilityModel>();
+    Vector cartesian_position(gs.m_xCartesian, gs.m_yCartesian, gs.m_zCartesian);
+    mobilityModel->SetPosition(cartesian_position);
+  }
 
   // Importing topology
   // vector<leo::Topo> topos = leo::readIsls("scratch/data/isls.txt");
@@ -37,10 +73,6 @@ main(int argc, char* argv[])
   // Read optional command-line parameters (e.g., enable visualizer with ./waf --run=<> --visualize
   CommandLine cmd;
   cmd.Parse(argc, argv);
-
-  // Creating nodes
-  NodeContainer nodes;
-  nodes.Create(tles.size() + ground_stations.size());
 
   // Connecting nodes using imported topology
   const int node1 = 35 + tles.size(); // 35,Krung-Thep-(Bangkok)

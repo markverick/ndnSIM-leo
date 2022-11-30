@@ -64,7 +64,10 @@ vector<leo::Tle> readTles(string fname)
 
     int orbit_count;
     int sat_count_per_orbit;
-    input >> orbit_count >> sat_count_per_orbit;
+    string nums;
+    getline(input, nums);
+    stringstream ss(nums);
+    ss >> orbit_count >> sat_count_per_orbit;
 
     string title;
     string line1;
@@ -74,6 +77,7 @@ vector<leo::Tle> readTles(string fname)
             getline(input, title);
             getline(input, line1);
             getline(input, line2);
+            // cout << title << endl;
             Tles.emplace_back(leo::Tle(orbit, orbit * sat_count_per_orbit + sat,
                               title, line1, line2));
         }
