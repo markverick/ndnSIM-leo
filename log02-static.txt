@@ -1,0 +1,209 @@
+Waf: Entering directory `/home/vagrant/hypatia-ndn/ns3-sat-sim/ns-3/build'
+[2779/2832] Compiling scratch/ndn-leo.cc
+[2788/2832] Linking build/ns3.35-ndn-leo-debug
+Waf: Leaving directory `/home/vagrant/hypatia-ndn/ns3-sat-sim/ns-3/build'
+Build commands will be stored in build/compile_commands.json
+'build' finished successfully (10.314s)
+Imported 1584 TLEs from scratch/data/tles.txt
+ID(s): 0 <--> 1583
+Imported 100 ground stations from scratch/data/ground_stations.txt
+ID(s): 1584 <--> 1683
+Loading topology...
+Setting up FIB schedules...
++0.000000000s 1619 ndn.Consumer:Consumer()
++0.000000000s 1604 ndn.Producer:Producer()
++0.000000000s 1619 ndn.Consumer:StartApplication()
++0.000000000s 1619 ndn.Consumer:SendPacket()
++0.000000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 0
++0.000000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 0 with +0ns. already 0 items
++0.000000000s 1604 ndn.Producer:StartApplication()
++0.000000000s 1619 ndn.Consumer:OnNack(): [INFO ] NACK received for: /uid-1604/seq=0, reason: NoRoute
++0.500000000s 1619 ndn.Consumer:SendPacket()
++0.500000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 1
++0.500000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 1 with +5e+08ns. already 1 items
++0.592592000s 1604 ndn.Producer:OnInterest(0x55bc9e8165e0, 0x55bd335f4100)
++0.592592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=1
++0.759776000s 1619 ndn.Consumer:OnData(0x55bcc21ea480, 0x55bcc5646fa0)
++0.759776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 1
++0.759776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++0.800000000s 1619 ndn.Consumer:OnTimeout(0)
++1.000000000s 1619 ndn.Consumer:SendPacket()
++1.000000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 0
++1.000000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 0 with +1e+09ns. already 0 items
++1.092592000s 1604 ndn.Producer:OnInterest(0x55bc9e8165e0, 0x55bd752fa160)
++1.092592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=0
++1.259776000s 1619 ndn.Consumer:OnData(0x55bcc21ea480, 0x55bcafb76fb0)
++1.259776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 0
++1.259776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++1.500000000s 1619 ndn.Consumer:SendPacket()
++1.500000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 2
++1.500000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 2 with +1.5e+09ns. already 0 items
++1.592592000s 1604 ndn.Producer:OnInterest(0x55bc9e8165e0, 0x55bd88933b00)
++1.592592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=2
++1.759776000s 1619 ndn.Consumer:OnData(0x55bcc21ea480, 0x55bd4f121610)
++1.759776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 2
++1.759776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++2.000000000s 1619 ndn.Consumer:SendPacket()
++2.000000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 3
++2.000000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 3 with +2e+09ns. already 0 items
++2.092592000s 1604 ndn.Producer:OnInterest(0x55bc9e8165e0, 0x55bda4613560)
++2.092592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=3
++2.259776000s 1619 ndn.Consumer:OnData(0x55bcc21ea480, 0x55bca4d4c9a0)
++2.259776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 3
++2.259776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++2.500000000s 1619 ndn.Consumer:SendPacket()
++2.500000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 4
++2.500000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 4 with +2.5e+09ns. already 0 items
++2.592592000s 1604 ndn.Producer:OnInterest(0x55bc9e8165e0, 0x55bd21964880)
++2.592592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=4
++2.759776000s 1619 ndn.Consumer:OnData(0x55bcc21ea480, 0x55bd770e74a0)
++2.759776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 4
++2.759776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++3.000000000s 1619 ndn.Consumer:SendPacket()
++3.000000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 5
++3.000000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 5 with +3e+09ns. already 0 items
++3.092592000s 1604 ndn.Producer:OnInterest(0x55bc9e8165e0, 0x55bd29ae71c0)
++3.092592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=5
++3.259776000s 1619 ndn.Consumer:OnData(0x55bcc21ea480, 0x55bd4b6a8510)
++3.259776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 5
++3.259776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++3.500000000s 1619 ndn.Consumer:SendPacket()
++3.500000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 6
++3.500000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 6 with +3.5e+09ns. already 0 items
++3.592592000s 1604 ndn.Producer:OnInterest(0x55bc9e8165e0, 0x55bd979149f0)
++3.592592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=6
++3.759776000s 1619 ndn.Consumer:OnData(0x55bcc21ea480, 0x55bcaec267c0)
++3.759776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 6
++3.759776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++4.000000000s 1619 ndn.Consumer:SendPacket()
++4.000000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 7
++4.000000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 7 with +4e+09ns. already 0 items
++4.092592000s 1604 ndn.Producer:OnInterest(0x55bc9e8165e0, 0x55bd5735ad10)
++4.092592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=7
++4.259776000s 1619 ndn.Consumer:OnData(0x55bcc21ea480, 0x55bd4fca5490)
++4.259776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 7
++4.259776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++4.500000000s 1619 ndn.Consumer:SendPacket()
++4.500000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 8
++4.500000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 8 with +4.5e+09ns. already 0 items
++4.592592000s 1604 ndn.Producer:OnInterest(0x55bc9e8165e0, 0x55bd31718010)
++4.592592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=8
++4.759776000s 1619 ndn.Consumer:OnData(0x55bcc21ea480, 0x55bcb97da570)
++4.759776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 8
++4.759776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
+Waf: Entering directory `/home/vagrant/hypatia-ndn/ns3-sat-sim/ns-3/build'
+[2777/2832] Compiling scratch/read-data.cc
+[2780/2832] Compiling scratch/ndn-leo.cc
+../scratch/ndn-leo.cc: In function ‘int ns3::main(int, char**)’:
+../scratch/ndn-leo.cc:42:77: error: no match for ‘operator+’ (operand types are ‘ns3::JulianDate’ and ‘int’)
+   42 |       mobModel->SetPosition(satellite->GetPosition(satellite->GetTleEpoch() + 100000));
+      |                                                    ~~~~~~~~~~~~~~~~~~~~~~~~ ^ ~~~~~~
+      |                                                                          |    |
+      |                                                                          |    int
+      |                                                                          ns3::JulianDate
+In file included from ./ns3/satellite.h:34,
+                 from ./ns3/satellite-position-helper.h:31,
+                 from ../scratch/ndn-leo.cc:8:
+./ns3/julian-date.h:205:14: note: candidate: ‘ns3::JulianDate ns3::JulianDate::operator+(const ns3::Time&) const’
+  205 |   JulianDate operator+ (const Time &t) const;
+      |              ^~~~~~~~
+./ns3/julian-date.h:205:37: note:   no known conversion for argument 1 from ‘int’ to ‘const ns3::Time&’
+  205 |   JulianDate operator+ (const Time &t) const;
+      |                         ~~~~~~~~~~~~^
+In file included from ./ns3/int64x64.h:30,
+                 from ./ns3/nstime.h:27,
+                 from ./ns3/command-line.h:28,
+                 from ./ns3/core-module.h:25,
+                 from ../scratch/ndn-leo.cc:3:
+./ns3/int64x64-128.h:491:19: note: candidate: ‘ns3::int64x64_t ns3::operator+(const ns3::int64x64_t&)’
+  491 | inline int64x64_t operator + (const int64x64_t & lhs)
+      |                   ^~~~~~~~
+./ns3/int64x64-128.h:491:19: note:   candidate expects 1 argument, 2 provided
+In file included from ./ns3/nstime.h:27,
+                 from ./ns3/command-line.h:28,
+                 from ./ns3/core-module.h:25,
+                 from ../scratch/ndn-leo.cc:3:
+./ns3/int64x64.h:89:12: note: candidate: ‘ns3::int64x64_t ns3::operator+(const ns3::int64x64_t&, const ns3::int64x64_t&)’
+   89 | int64x64_t operator + (const int64x64_t & lhs, const int64x64_t & rhs)
+      |            ^~~~~~~~
+./ns3/int64x64.h:89:43: note:   no known conversion for argument 1 from ‘ns3::JulianDate’ to ‘const ns3::int64x64_t&’
+   89 | int64x64_t operator + (const int64x64_t & lhs, const int64x64_t & rhs)
+      |                        ~~~~~~~~~~~~~~~~~~~^~~
+In file included from ./ns3/command-line.h:28,
+                 from ./ns3/core-module.h:25,
+                 from ../scratch/ndn-leo.cc:3:
+./ns3/nstime.h:924:13: note: candidate: ‘ns3::Time ns3::operator+(const ns3::Time&, const ns3::Time&)’
+  924 | inline Time operator + (const Time & lhs, const Time & rhs)
+      |             ^~~~~~~~
+./ns3/nstime.h:924:38: note:   no known conversion for argument 1 from ‘ns3::JulianDate’ to ‘const ns3::Time&’
+  924 | inline Time operator + (const Time & lhs, const Time & rhs)
+      |                         ~~~~~~~~~~~~~^~~
+In file included from ./ns3/core-module.h:51,
+                 from ../scratch/ndn-leo.cc:3:
+./ns3/length.h:850:8: note: candidate: ‘ns3::Length ns3::operator+(const ns3::Length&, const ns3::Length&)’
+  850 | Length operator+ (const Length& first, const Length& second);
+      |        ^~~~~~~~
+./ns3/length.h:850:33: note:   no known conversion for argument 1 from ‘ns3::JulianDate’ to ‘const ns3::Length&’
+  850 | Length operator+ (const Length& first, const Length& second);
+      |                   ~~~~~~~~~~~~~~^~~~~
+In file included from ./ns3/core-module.h:100,
+                 from ../scratch/ndn-leo.cc:3:
+./ns3/traced-value.h:460:6: note: candidate: ‘template<class T, class U> ns3::TracedValue<decltype ((lhs.Get() + rhs.Get()))> ns3::operator+(const ns3::TracedValue<T>&, const ns3::TracedValue<U>&)’
+  460 | auto operator + (const TracedValue<T> &lhs, const TracedValue<U> &rhs)->TracedValue<decltype(lhs.Get () + rhs.Get ())>
+      |      ^~~~~~~~
+./ns3/traced-value.h:460:6: note:   template argument deduction/substitution failed:
+../scratch/ndn-leo.cc:42:79: note:   ‘ns3::JulianDate’ is not derived from ‘const ns3::TracedValue<T>’
+   42 |       mobModel->SetPosition(satellite->GetPosition(satellite->GetTleEpoch() + 100000));
+      |                                                                               ^~~~~~
+In file included from ./ns3/core-module.h:100,
+                 from ../scratch/ndn-leo.cc:3:
+./ns3/traced-value.h:467:6: note: candidate: ‘template<class T, class U> ns3::TracedValue<decltype ((lhs.Get() + rhs))> ns3::operator+(const ns3::TracedValue<T>&, const U&)’
+  467 | auto operator + (const TracedValue<T> &lhs, const U &rhs)->TracedValue<decltype(lhs.Get () + rhs)>
+      |      ^~~~~~~~
+./ns3/traced-value.h:467:6: note:   template argument deduction/substitution failed:
+../scratch/ndn-leo.cc:42:79: note:   ‘ns3::JulianDate’ is not derived from ‘const ns3::TracedValue<T>’
+   42 |       mobModel->SetPosition(satellite->GetPosition(satellite->GetTleEpoch() + 100000));
+      |                                                                               ^~~~~~
+In file included from ./ns3/core-module.h:100,
+                 from ../scratch/ndn-leo.cc:3:
+./ns3/traced-value.h:474:6: note: candidate: ‘template<class T, class U> ns3::TracedValue<decltype ((lhs + rhs.Get()))> ns3::operator+(const U&, const ns3::TracedValue<T>&)’
+  474 | auto operator + (const U &lhs, const TracedValue<T> &rhs)->TracedValue<decltype(lhs + rhs.Get ())>
+      |      ^~~~~~~~
+./ns3/traced-value.h:474:6: note:   template argument deduction/substitution failed:
+../scratch/ndn-leo.cc:42:79: note:   mismatched types ‘const ns3::TracedValue<T>’ and ‘int’
+   42 |       mobModel->SetPosition(satellite->GetPosition(satellite->GetTleEpoch() + 100000));
+      |                                                                               ^~~~~~
+In file included from ./ns3/core-module.h:100,
+                 from ../scratch/ndn-leo.cc:3:
+./ns3/traced-value.h:802:16: note: candidate: ‘template<class T> ns3::TracedValue<T> ns3::operator+(const ns3::TracedValue<T>&)’
+  802 | TracedValue<T> operator + (const TracedValue<T> &lhs)
+      |                ^~~~~~~~
+./ns3/traced-value.h:802:16: note:   template argument deduction/substitution failed:
+../scratch/ndn-leo.cc:42:79: note:   ‘ns3::JulianDate’ is not derived from ‘const ns3::TracedValue<T>’
+   42 |       mobModel->SetPosition(satellite->GetPosition(satellite->GetTleEpoch() + 100000));
+      |                                                                               ^~~~~~
+In file included from ./ns3/queue.h:32,
+                 from ./ns3/drop-tail-queue.h:22,
+                 from ./ns3/network-module.h:24,
+                 from ../scratch/ndn-leo.cc:4:
+./ns3/queue-size.h:250:11: note: candidate: ‘template<class Item> ns3::QueueSize ns3::operator+(const ns3::QueueSize&, const ns3::Ptr<T>&)’
+  250 | QueueSize operator+ (const QueueSize& lhs, const Ptr<Item>& rhs)
+      |           ^~~~~~~~
+./ns3/queue-size.h:250:11: note:   template argument deduction/substitution failed:
+../scratch/ndn-leo.cc:42:79: note:   mismatched types ‘const ns3::Ptr<T>’ and ‘int’
+   42 |       mobModel->SetPosition(satellite->GetPosition(satellite->GetTleEpoch() + 100000));
+      |                                                                               ^~~~~~
+In file included from ./ns3/queue.h:32,
+                 from ./ns3/drop-tail-queue.h:22,
+                 from ./ns3/network-module.h:24,
+                 from ../scratch/ndn-leo.cc:4:
+./ns3/queue-size.h:264:11: note: candidate: ‘template<class Item> ns3::QueueSize ns3::operator+(const ns3::Ptr<T>&, const ns3::QueueSize&)’
+  264 | QueueSize operator+ (const Ptr<Item>& lhs, const QueueSize& rhs)
+      |           ^~~~~~~~
+./ns3/queue-size.h:264:11: note:   template argument deduction/substitution failed:
+../scratch/ndn-leo.cc:42:79: note:   ‘ns3::JulianDate’ is not derived from ‘const ns3::Ptr<T>’
+   42 |       mobModel->SetPosition(satellite->GetPosition(satellite->GetTleEpoch() + 100000));
+      |                                                                               ^~~~~~
+
+Waf: Entering directory `/home/vagrant/hypatia-ndn/ns3-sat-sim/ns-3/build'
+[2778/2832] Compiling scratch/read-data.cc

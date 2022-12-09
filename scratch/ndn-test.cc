@@ -38,6 +38,7 @@
 #include "ns3/wifi-net-device.h"
 #include "ns3/point-to-point-laser-net-device.h"
 #include "ns3/ipv4.h"
+#include "read-data.h"
 
 namespace ns3 {
 
@@ -157,7 +158,6 @@ void ReadSatellites()
 
 void ReadGroundStations()
 {
-
   // Create a new file stream to open the file
   std::ifstream fs;
   fs.open(m_satellite_network_dir + "/ground_stations.txt");
@@ -218,8 +218,8 @@ void ReadISLs()
     std::cout << "    >> ISL max queue size... " << m_isl_max_queue_size_pkts << " packets" << std::endl;
 
     // Traffic control helper
-    TrafficControlHelper tch_isl;
-    tch_isl.SetRootQueueDisc("ns3::FifoQueueDisc", "MaxSize", QueueSizeValue(QueueSize("1p"))); // Will be removed later any case
+    // TrafficControlHelper tch_isl;
+    // tch_isl.SetRootQueueDisc("ns3::FifoQueueDisc", "MaxSize", QueueSizeValue(QueueSize("1p"))); // Will be removed later any case
 
     // Open file
     std::ifstream fs;
@@ -244,18 +244,18 @@ void ReadISLs()
         c.Add(m_satelliteNodes.Get(sat1_id));
         NetDeviceContainer netDevices = p2p_laser_helper.Install(c);
 
-        // Install traffic control helper
-        tch_isl.Install(netDevices.Get(0));
-        tch_isl.Install(netDevices.Get(1));
+        // // Install traffic control helper
+        // tch_isl.Install(netDevices.Get(0));
+        // tch_isl.Install(netDevices.Get(1));
 
-        // Assign some IP address (nothing smart, no aggregation, just some IP address)
-        m_ipv4_helper.Assign(netDevices);
-        m_ipv4_helper.NewNetwork();
+        // // Assign some IP address (nothing smart, no aggregation, just some IP address)
+        // m_ipv4_helper.Assign(netDevices);
+        // m_ipv4_helper.NewNetwork();
 
-        // Remove the traffic control layer (must be done here, else the Ipv4 helper will assign a default one)
-        TrafficControlHelper tch_uninstaller;
-        tch_uninstaller.Uninstall(netDevices.Get(0));
-        tch_uninstaller.Uninstall(netDevices.Get(1));
+        // // Remove the traffic control layer (must be done here, else the Ipv4 helper will assign a default one)
+        // TrafficControlHelper tch_uninstaller;
+        // tch_uninstaller.Uninstall(netDevices.Get(0));
+        // tch_uninstaller.Uninstall(netDevices.Get(1));
 
         // Utilization tracking
         if (m_enable_isl_utilization_tracking) {
@@ -328,8 +328,8 @@ void CreateGSLs() {
     std::cout << "    >> Finished install GSL interfaces (interfaces, network devices, one shared channel)" << std::endl;
 
     // Install queueing disciplines
-    tch_gsl.Install(devices);
-    std::cout << "    >> Finished installing traffic control layer qdisc which will be removed later" << std::endl;
+    // tch_gsl.Install(devices);
+    // std::cout << "    >> Finished installing traffic control layer qdisc which will be removed later" << std::endl;
 
     // Assign IP addresses
     //
@@ -340,43 +340,43 @@ void CreateGSLs() {
     // Ipv4AddressGenerator::AddAllocated (addr);
     //
     // Beware that if you do this, and there are IP assignment conflicts, they are not detected.
-    //
-    std::cout << "    >> Assigning IP addresses..." << std::endl;
-    std::cout << "       (with many interfaces, this can take long due to an inefficient IP assignment conflict checker)" << std::endl;
-    std::cout << "       Progress (as there are more entries, it becomes slower):" << std::endl;
-    int64_t start_time_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    int64_t last_time_ns = start_time_ns;
-    for (uint32_t i = 0; i < devices.GetN(); i++) {
+    // //
+    // std::cout << "    >> Assigning IP addresses..." << std::endl;
+    // std::cout << "       (with many interfaces, this can take long due to an inefficient IP assignment conflict checker)" << std::endl;
+    // std::cout << "       Progress (as there are more entries, it becomes slower):" << std::endl;
+    // int64_t start_time_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    // int64_t last_time_ns = start_time_ns;
+    // for (uint32_t i = 0; i < devices.GetN(); i++) {
 
-        // Assign IPv4 address
-        m_ipv4_helper.Assign(devices.Get(i));
-        m_ipv4_helper.NewNetwork();
+    //     // Assign IPv4 address
+    //     m_ipv4_helper.Assign(devices.Get(i));
+    //     m_ipv4_helper.NewNetwork();
 
-        // Give a progress update if at an even 10%
-        int update_interval = (int) std::ceil(devices.GetN() / 10.0);
-        if (((i + 1) % update_interval) == 0 || (i + 1) == devices.GetN()) {
-            int64_t now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            printf("       - %.2f%% (t = %.2f s, update took %.2f s)\n",
-                (float) (i + 1) / (float) devices.GetN() * 100.0,
-                (now_ns - start_time_ns) / 1e9,
-                (now_ns - last_time_ns) / 1e9
-            );
-            last_time_ns = now_ns;
-        }
+    //     // Give a progress update if at an even 10%
+    //     int update_interval = (int) std::ceil(devices.GetN() / 10.0);
+    //     if (((i + 1) % update_interval) == 0 || (i + 1) == devices.GetN()) {
+    //         int64_t now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    //         printf("       - %.2f%% (t = %.2f s, update took %.2f s)\n",
+    //             (float) (i + 1) / (float) devices.GetN() * 100.0,
+    //             (now_ns - start_time_ns) / 1e9,
+    //             (now_ns - last_time_ns) / 1e9
+    //         );
+    //         last_time_ns = now_ns;
+    //     }
 
-    }
-    std::cout << "    >> Finished assigning IPs" << std::endl;
+    // }
+    // std::cout << "    >> Finished assigning IPs" << std::endl;
 
-    // Remove the traffic control layer (must be done here, else the Ipv4 helper will assign a default one)
-    TrafficControlHelper tch_uninstaller;
-    std::cout << "    >> Removing traffic control layers (qdiscs)..." << std::endl;
-    for (uint32_t i = 0; i < devices.GetN(); i++) {
-        tch_uninstaller.Uninstall(devices.Get(i));
-    }
-    std::cout << "    >> Finished removing GSL queueing disciplines" << std::endl;
+    // // Remove the traffic control layer (must be done here, else the Ipv4 helper will assign a default one)
+    // TrafficControlHelper tch_uninstaller;
+    // std::cout << "    >> Removing traffic control layers (qdiscs)..." << std::endl;
+    // for (uint32_t i = 0; i < devices.GetN(); i++) {
+    //     tch_uninstaller.Uninstall(devices.Get(i));
+    // }
+    // std::cout << "    >> Finished removing GSL queueing disciplines" << std::endl;
 
-    // Check that all interfaces were created
-    NS_ABORT_MSG_IF(total_num_gsl_ifs != devices.GetN(), "Not the expected amount of interfaces has been created.");
+    // // Check that all interfaces were created
+    // NS_ABORT_MSG_IF(total_num_gsl_ifs != devices.GetN(), "Not the expected amount of interfaces has been created.");
 
     std::cout << "    >> GSL interfaces are setup" << std::endl;
 
@@ -469,8 +469,8 @@ main(int argc, char* argv[])
   
 
   // // ARP caches
-  std::cout << "  > Populating ARP caches" << std::endl;
-  PopulateArpCaches();
+  // std::cout << "  > Populating ARP caches" << std::endl;
+  // PopulateArpCaches();
 
 
   // Choosing forwarding strategy
@@ -506,6 +506,12 @@ main(int argc, char* argv[])
 
   // Calculate and install FIBs
   ndn::GlobalRoutingHelper::CalculateRoutes();
+  // Setting up FIB schedules
+
+  cout << "Setting up FIB schedules..."  << endl;
+  // Install NDN stack on all nodes
+  ndnHelper.UpdateAll();
+  leo::importDynamicState(m_allNodes, "scratch/data/routes_dir");
 
   Simulator::Stop(Seconds(20.0));
 

@@ -13,6 +13,7 @@ namespace leo
 // Explicitly pick an overloaded function for Schedule
 void RemoveRouteAB (ns3::Ptr<ns3::Node> node, std::string prefix, ns3::Ptr<ns3::Node> otherNode);
 void AddRouteAB (ns3::Ptr<ns3::Node> node, std::string prefix, ns3::Ptr<ns3::Node> otherNode, int metric);
+void AddSatRoute (ns3::Ptr<ns3::Node> node, std::string prefix, ns3::Ptr<ns3::Node> otherNode, int metric);
 struct pairhash {
 public:
   template <typename T, typename U>

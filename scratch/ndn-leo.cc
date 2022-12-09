@@ -9,6 +9,7 @@
 #include "ns3/satellite-position-mobility-model.h"
 #include "ns3/mobility-helper.h"
 #include "read-data.h"
+#include "helper/point-to-point-sat-helper.h"
 
 // for LinkStatusControl::FailLinks and LinkStatusControl::UpLinks
 #include "ns3/ndnSIM/helper/ndn-link-control-helper.hpp"
@@ -66,8 +67,8 @@ main(int argc, char* argv[])
   unordered_set<pair<int, int>, leo::pairhash > topos = leo::populateTopology("scratch/data/routes_dir");
 
   // Setting default parameters for PointToPoint links and channels
-  Config::SetDefault("ns3::PointToPointNetDevice::DataRate", StringValue("1Mbps"));
-  Config::SetDefault("ns3::PointToPointChannel::Delay", StringValue("10ms"));
+  Config::SetDefault("ns3::PointToPointSatNetDevice::DataRate", StringValue("1Mbps"));
+  Config::SetDefault("ns3::PointToPointSatChannel::Delay", StringValue("10ms"));
   Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
 
   // Read optional command-line parameters (e.g., enable visualizer with ./waf --run=<> --visualize

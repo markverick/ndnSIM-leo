@@ -1,0 +1,93 @@
+Waf: Entering directory `/home/vagrant/hypatia-ndn/ns3-sat-sim/ns-3/build'
+[2779/2832] Compiling scratch/ndn-leo.cc
+[2788/2832] Linking build/ns3.35-ndn-leo-debug
+Waf: Leaving directory `/home/vagrant/hypatia-ndn/ns3-sat-sim/ns-3/build'
+Build commands will be stored in build/compile_commands.json
+'build' finished successfully (10.390s)
+Imported 1584 TLEs from scratch/data/tles.txt
+ID(s): 0 <--> 1583
+Imported 100 ground stations from scratch/data/ground_stations.txt
+ID(s): 1584 <--> 1683
+Loading topology...
+Setting up FIB schedules...
++0.000000000s 1619 ndn.Consumer:Consumer()
++0.000000000s 1604 ndn.Producer:Producer()
++0.000000000s 1619 ndn.Consumer:StartApplication()
++0.000000000s 1619 ndn.Consumer:SendPacket()
++0.000000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 0
++0.000000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 0 with +0ns. already 0 items
++0.000000000s 1604 ndn.Producer:StartApplication()
++0.000000000s 1619 ndn.Consumer:OnNack(): [INFO ] NACK received for: /uid-1604/seq=0, reason: NoRoute
++0.500000000s 1619 ndn.Consumer:SendPacket()
++0.500000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 1
++0.500000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 1 with +5e+08ns. already 1 items
++0.502592000s 1604 ndn.Producer:OnInterest(0x56267502e630, 0x56270f4542b0)
++0.502592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=1
++0.579776000s 1619 ndn.Consumer:OnData(0x562698a02a30, 0x5626882be5d0)
++0.579776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 1
++0.579776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++0.600000000s 1619 ndn.Consumer:OnTimeout(0)
++1.000000000s 1619 ndn.Consumer:SendPacket()
++1.000000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 0
++1.000000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 0 with +1e+09ns. already 0 items
++1.002592000s 1604 ndn.Producer:OnInterest(0x56267502e630, 0x562764dd9f40)
++1.002592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=0
++1.079776000s 1619 ndn.Consumer:OnData(0x562698a02a30, 0x56269b0bf4c0)
++1.079776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 0
++1.079776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++1.500000000s 1619 ndn.Consumer:SendPacket()
++1.500000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 2
++1.500000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 2 with +1.5e+09ns. already 0 items
++1.502592000s 1604 ndn.Producer:OnInterest(0x56267502e630, 0x562769d077f0)
++1.502592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=2
++1.579776000s 1619 ndn.Consumer:OnData(0x562698a02a30, 0x56267f165af0)
++1.579776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 2
++1.579776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++2.000000000s 1619 ndn.Consumer:SendPacket()
++2.000000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 3
++2.000000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 3 with +2e+09ns. already 0 items
++2.002592000s 1604 ndn.Producer:OnInterest(0x56267502e630, 0x5626efa63020)
++2.002592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=3
++2.079776000s 1619 ndn.Consumer:OnData(0x562698a02a30, 0x56267b148de0)
++2.079776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 3
++2.079776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++2.500000000s 1619 ndn.Consumer:SendPacket()
++2.500000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 4
++2.500000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 4 with +2.5e+09ns. already 0 items
++2.502592000s 1604 ndn.Producer:OnInterest(0x56267502e630, 0x56270fb2d740)
++2.502592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=4
++2.579776000s 1619 ndn.Consumer:OnData(0x562698a02a30, 0x56268c9f11e0)
++2.579776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 4
++2.579776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++3.000000000s 1619 ndn.Consumer:SendPacket()
++3.000000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 5
++3.000000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 5 with +3e+09ns. already 0 items
++3.002592000s 1604 ndn.Producer:OnInterest(0x56267502e630, 0x56272a974410)
++3.002592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=5
++3.079776000s 1619 ndn.Consumer:OnData(0x562698a02a30, 0x562691855db0)
++3.079776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 5
++3.079776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++3.500000000s 1619 ndn.Consumer:SendPacket()
++3.500000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 6
++3.500000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 6 with +3.5e+09ns. already 0 items
++3.502592000s 1604 ndn.Producer:OnInterest(0x56267502e630, 0x562706c31a60)
++3.502592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=6
++3.579776000s 1619 ndn.Consumer:OnData(0x562698a02a30, 0x56271615cbb0)
++3.579776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 6
++3.579776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++4.000000000s 1619 ndn.Consumer:SendPacket()
++4.000000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 7
++4.000000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 7 with +4e+09ns. already 0 items
++4.002592000s 1604 ndn.Producer:OnInterest(0x56267502e630, 0x5627085845b0)
++4.002592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=7
++4.079776000s 1619 ndn.Consumer:OnData(0x562698a02a30, 0x562678167cc0)
++4.079776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 7
++4.079776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9
++4.500000000s 1619 ndn.Consumer:SendPacket()
++4.500000000s 1619 ndn.Consumer:SendPacket(): [INFO ] > Interest for 8
++4.500000000s 1619 ndn.Consumer:WillSendOutInterest(): [DEBUG] Trying to add 8 with +4.5e+09ns. already 0 items
++4.502592000s 1604 ndn.Producer:OnInterest(0x56267502e630, 0x5627097769e0)
++4.502592000s 1604 ndn.Producer:OnInterest(): [INFO ] node(1604) responding with Data: /uid-1604/seq=8
++4.579776000s 1619 ndn.Consumer:OnData(0x562698a02a30, 0x5627037b1a50)
++4.579776000s 1619 ndn.Consumer:OnData(): [INFO ] < DATA for 8
++4.579776000s 1619 ndn.Consumer:OnData(): [DEBUG] Hop count: 9

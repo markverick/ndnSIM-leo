@@ -1033,9 +1033,21 @@ def add_examples_programs(bld):
 
 def add_scratch_programs(bld):
     all_modules = [mod[len("ns3-"):] for mod in bld.env['NS3_ENABLED_MODULES'] + bld.env['NS3_ENABLED_CONTRIBUTED_MODULES']]
-    obj = bld.create_ns3_program('ndn-leo', all_modules)
+    obj = bld.create_ns3_program('ndn-1', all_modules)
+    obj.source = [
+        'scratch/ndn-test.cc',
+        'scratch/read-data.cc',
+        'scratch/model/ground-station.cc',
+        'scratch/model/tle.cc',
+        'scratch/model/topo.cc'
+    ]
+    obj = bld.create_ns3_program('ndn-2', all_modules)
     obj.source = [
         'scratch/ndn-leo.cc',
+        'scratch/model/point-to-point-sat-channel.cc',
+        'scratch/model/point-to-point-sat-remote-channel.cc',
+        'scratch/model/point-to-point-sat-net-device.cc',
+        'scratch/helper/point-to-point-sat-helper.cc',
         'scratch/read-data.cc',
         'scratch/model/ground-station.cc',
         'scratch/model/tle.cc',
