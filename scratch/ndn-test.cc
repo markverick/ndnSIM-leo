@@ -80,9 +80,9 @@ std::string getConfigParamOrDefault(std::string key, std::string default_value) 
   return default_value;
 }
 
-void readConfig() {
+void readConfig(std::string conf) {
   // Read the config
-  m_config = read_config("scratch/config_ns3.properties");
+  m_config = read_config(conf);
 
   // Print full config
   printf("CONFIGURATION\n-----\nKEY                                       VALUE\n");
@@ -391,16 +391,11 @@ void AddRouteSat (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> o
       DynamicCast<PointToPointLaserNetDevice>(node->GetDevice(deviceId));
     if (netDevice == 0)
       continue;
-    // cout << "ROUTE SAT ADDED 1:" << node << "," << otherNode << endl;
     Ptr<Channel> channel = netDevice->GetChannel();
     if (channel == 0)
       continue;
-    // cout << "ROUTE SAT ADDED 2:" << node->GetId() << "," << otherNode->GetId() << endl;
-    // cout << "DEVICES: " << channel->GetDevice(0)->GetNode() << "," << channel->GetDevice(1)->GetNode() << endl;
     if (channel->GetDevice(0)->GetNode() == otherNode
         || channel->GetDevice(1)->GetNode() == otherNode) {
-      cout << "DEVICES: " << channel->GetDevice(0)->GetNode()->GetId() << "," << channel->GetDevice(1)->GetNode()->GetId() << endl;
-      cout << "ROUTE SAT ADDED 3:" << node << endl;
       Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
       NS_ASSERT_MSG(ndn != 0, "Ndn stack should be installed on the node");
 
@@ -450,36 +445,6 @@ void importDynamicStateSat(ns3::NodeContainer nodes, string dname) {
     }
 }
 
-void PopulateArpCaches() {
-
-    // ARP lookups hinder performance, and actually won't succeed, so to prevent that from happening,
-    // all GSL interfaces' IPs are added into an ARP cache
-
-    // ARP cache with all ground station and satellite GSL channel interface info
-    Ptr<ArpCache> arpAll = CreateObject<ArpCache>();
-    arpAll->SetAliveTimeout (Seconds(3600 * 24 * 365)); // Valid one year
-
-    // Satellite ARP entries
-    for (uint32_t i = 0; i < m_allNodes.GetN(); i++) {
-
-        // Information about all interfaces (TODO: Only needs to be GSL interfaces)
-        for (size_t j = 1; j < m_allNodes.Get(i)->GetObject<Ipv4>()->GetNInterfaces(); j++) {
-            Mac48Address mac48Address = Mac48Address::ConvertFrom(m_allNodes.Get(i)->GetObject<Ipv4>()->GetNetDevice(j)->GetAddress());
-            Ipv4Address ipv4Address = m_allNodes.Get(i)->GetObject<Ipv4>()->GetAddress(j, 0).GetLocal();
-
-            // Add the info of the GSL interface to the cache
-            ArpCache::Entry * entry = arpAll->Add(ipv4Address);
-            entry->SetMacAddress(mac48Address);
-
-            // Set a pointer to the ARP cache it should use (will be filled at the end of this function, it's only a pointer)
-            m_allNodes.Get(i)->GetObject<Ipv4L3Protocol>()->GetInterface(j)->SetAttribute("ArpCache", PointerValue(arpAll));
-
-        }
-
-    }
-
-}
-
 int
 main(int argc, char* argv[])
 {
@@ -489,16 +454,14 @@ main(int argc, char* argv[])
   Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
 
   // Configuration
-  readConfig();
+  string ns3_config = "scratch/config/isl_test.properties";
+  readConfig(ns3_config);
   m_satellite_network_dir = getConfigParamOrDefault("satellite_network_dir", "network_dir");
   m_satellite_network_routes_dir =  getConfigParamOrDefault("satellite_network_routes_dir", "network_dir/routes_dir");
   m_satellite_network_force_static = parse_boolean(getConfigParamOrDefault("satellite_network_force_static", "false"));
 
   // Read optional command-line parameters (e.g., enable visualizer with ./waf --run=<> --visualize
   CommandLine cmd;
-  cmd.AddValue ("network_dir", "Directory containing satellite network information", m_satellite_network_dir);
-  cmd.AddValue ("routes_dir", "Directory containing the routes over time of the network", m_satellite_network_routes_dir);
-  cmd.AddValue ("force_static", "True to disable satellite movement", m_satellite_network_force_static);
   cmd.Parse(argc, argv);
 
   // Reading nodes
@@ -534,12 +497,6 @@ main(int argc, char* argv[])
 
 
   std::cout << "  > Installed NDN stacks" << std::endl;
-  
-
-  // // ARP caches
-  // std::cout << "  > Populating ARP caches" << std::endl;
-  // PopulateArpCaches();
-
 
   // Choosing forwarding strategy
   std::cout << "  > Installing forwarding strategy" << std::endl;
@@ -551,13 +508,14 @@ main(int argc, char* argv[])
   // ndnGlobalRoutingHelper.Install(m_allNodes);
 
   // Installing applications
-  // Ptr<Node> node1 = m_groundStationNodes.Get(35); // 35,Krung-Thep-(Bangkok)
-  // Ptr<Node> node2 = m_groundStationNodes.Get(20); // 20, Los-Angeles-Long-Beach-Santa-Ana
-  Ptr<Node> node1 = m_allNodes.Get(1161); // 35,Krung-Thep-(Bangkok)
-  Ptr<Node> node2 = m_allNodes.Get(1183); // 20, Los-Angeles-Long-Beach-Santa-Ana
-  std::string prefix1 = "/uid-1161";
-  std::string prefix2 = "/uid-1183";
-  cout << "PREFIX: " << prefix2 << endl;
+  std::string prefix = "/uid-";
+  int node1_id = stoi(getConfigParamOrDefault("consumer_id", "0"));
+  int node2_id = stoi(getConfigParamOrDefault("producer_id", "0"));
+  Ptr<Node> node1 = m_allNodes.Get(node1_id); // 35,Krung-Thep-(Bangkok)
+  Ptr<Node> node2 = m_allNodes.Get(node2_id); // 20, Los-Angeles-Long-Beach-Santa-Ana
+  std::string prefix1 = prefix + to_string(node1_id);
+  std::string prefix2 = prefix + to_string(node2_id);
+  // cout << "PREFIX: " << prefix2 << endl;
   // Consumer
   ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
   // Consumer will request /prefix/0, /prefix/1, ...
@@ -582,7 +540,7 @@ main(int argc, char* argv[])
   cout << "Setting up FIB schedules..."  << endl;
   // Install NDN stack on all nodes
   ndnHelper.UpdateAll();
-  importDynamicStateSat(m_allNodes, "scratch/data/routes_dir_isl_test");
+  importDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
 
   cout << "Starting the simulation"  << endl;
   Simulator::Stop(Seconds(20.0));
