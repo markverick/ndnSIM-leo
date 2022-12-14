@@ -9,7 +9,7 @@
 #include "ns3/satellite-position-mobility-model.h"
 #include "ns3/mobility-helper.h"
 #include "read-data.h"
-#include "helper/point-to-point-sat-helper.h"
+// #include "helper/point-to-point-sat-helper.h"
 
 // for LinkStatusControl::FailLinks and LinkStatusControl::UpLinks
 #include "ns3/ndnSIM/helper/ndn-link-control-helper.hpp"

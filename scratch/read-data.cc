@@ -38,34 +38,34 @@ void AddRouteAB (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> ot
     ns3::ndn::FibHelper::AddRoute(node, prefix, otherNode, metric);
 }
 
-void AddSatRoute (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> otherNode, int metric)
-{
-  for (uint32_t deviceId = 0; deviceId < node->GetNDevices(); deviceId++) {
-    Ptr<PointToPointSatNetDevice> netDevice =
-      DynamicCast<PointToPointSatNetDevice>(node->GetDevice(deviceId));
-    if (netDevice == 0)
-      continue;
+// void AddSatRoute (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> otherNode, int metric)
+// {
+//   for (uint32_t deviceId = 0; deviceId < node->GetNDevices(); deviceId++) {
+//     Ptr<PointToPointSatNetDevice> netDevice =
+//       DynamicCast<PointToPointSatNetDevice>(node->GetDevice(deviceId));
+//     if (netDevice == 0)
+//       continue;
 
-    Ptr<Channel> channel = netDevice->GetChannel();
-    if (channel == 0)
-      continue;
+//     Ptr<Channel> channel = netDevice->GetChannel();
+//     if (channel == 0)
+//       continue;
 
-    if (channel->GetDevice(0)->GetNode() == otherNode
-        || channel->GetDevice(1)->GetNode() == otherNode) {
-      Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
-      NS_ASSERT_MSG(ndn != 0, "Ndn stack should be installed on the node");
+//     if (channel->GetDevice(0)->GetNode() == otherNode
+//         || channel->GetDevice(1)->GetNode() == otherNode) {
+//       Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
+//       NS_ASSERT_MSG(ndn != 0, "Ndn stack should be installed on the node");
 
-      shared_ptr<ns3::ndn::Face> face = ndn->getFaceByNetDevice(netDevice);
-      NS_ASSERT_MSG(face != 0, "There is no face associated with the p2p link");
-      ns3::ndn::FibHelper::AddRoute(node, prefix, face, metric);
+//       shared_ptr<ns3::ndn::Face> face = ndn->getFaceByNetDevice(netDevice);
+//       NS_ASSERT_MSG(face != 0, "There is no face associated with the p2p link");
+//       ns3::ndn::FibHelper::AddRoute(node, prefix, face, metric);
 
-      return;
-    }
-  }
+//       return;
+//     }
+//   }
 
-  NS_FATAL_ERROR("Cannot add route: Node# " << node->GetId() << " and Node# " << otherNode->GetId()
-                                            << " are not connected");
-}
+//   NS_FATAL_ERROR("Cannot add route: Node# " << node->GetId() << " and Node# " << otherNode->GetId()
+//                                             << " are not connected");
+// }
 vector<leo::GroundStation> readGroundStations(string fname, int offset)
 {
     vector<leo::GroundStation> groundStations; 

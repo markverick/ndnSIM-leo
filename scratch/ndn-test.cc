@@ -2,6 +2,8 @@
 
 
 #include <utility>
+#include <filesystem>
+#include <boost/algorithm/string.hpp>
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/point-to-point-module.h"
@@ -382,6 +384,72 @@ void CreateGSLs() {
 
 }
 
+void AddRouteSat (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> otherNode, int metric)
+{
+  for (uint32_t deviceId = 0; deviceId < node->GetNDevices(); deviceId++) {
+    Ptr<PointToPointLaserNetDevice> netDevice =
+      DynamicCast<PointToPointLaserNetDevice>(node->GetDevice(deviceId));
+    if (netDevice == 0)
+      continue;
+    // cout << "ROUTE SAT ADDED 1:" << node << "," << otherNode << endl;
+    Ptr<Channel> channel = netDevice->GetChannel();
+    if (channel == 0)
+      continue;
+    // cout << "ROUTE SAT ADDED 2:" << node->GetId() << "," << otherNode->GetId() << endl;
+    // cout << "DEVICES: " << channel->GetDevice(0)->GetNode() << "," << channel->GetDevice(1)->GetNode() << endl;
+    if (channel->GetDevice(0)->GetNode() == otherNode
+        || channel->GetDevice(1)->GetNode() == otherNode) {
+      cout << "DEVICES: " << channel->GetDevice(0)->GetNode()->GetId() << "," << channel->GetDevice(1)->GetNode()->GetId() << endl;
+      cout << "ROUTE SAT ADDED 3:" << node << endl;
+      Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
+      NS_ASSERT_MSG(ndn != 0, "Ndn stack should be installed on the node");
+
+      shared_ptr<ns3::ndn::Face> face = ndn->getFaceByNetDevice(netDevice);
+      NS_ASSERT_MSG(face != 0, "There is no face associated with the p2p link");
+
+      ns3::ndn::FibHelper::AddRoute(node, prefix, face, metric);
+
+      return;
+    }
+  }
+}
+
+void importDynamicStateSat(ns3::NodeContainer nodes, string dname) {
+    // Iterate through the dynamic state directory
+    for (const auto & entry : filesystem::directory_iterator(dname)) {
+        // Extract nanoseconds from file name
+        std::regex rgx(".*fstate_(\\w+)\\.txt.*");
+        smatch match;
+        string full_path = entry.path();
+        if (!std::regex_search(full_path, match, rgx)) continue;
+        double ms = stod(match[1]) / 1000000;
+
+        // Add RemoveRoute schedule by emptying temporary set
+        int current_node;
+        // int destination_node;
+        string prefix;
+        int next_hop;
+
+        // Read each file
+        ifstream input(full_path);
+        string line;
+        while(getline(input, line))
+        {
+            vector<string> result;
+            boost::split(result, line, boost::is_any_of(","));
+            current_node = stoi(result[0]);
+            // destination_node = stoi(result[1]);
+            next_hop = stoi(result[2]);
+            // Add AddRoute schedule
+            prefix = "/uid-" + result[1];
+            // cout << "ROUTE: "<< current_node << ", " << prefix << ", " << next_hop << endl;
+            // AddRouteAB(nodes.Get(current_node), prefix, nodes.Get(next_hop), 1);
+            // ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteAB, nodes.Get(current_node), prefix, nodes.Get(next_hop), 1);
+            ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteSat, nodes.Get(current_node), prefix, nodes.Get(next_hop), 1);
+        }
+    }
+}
+
 void PopulateArpCaches() {
 
     // ARP lookups hinder performance, and actually won't succeed, so to prevent that from happening,
@@ -474,45 +542,49 @@ main(int argc, char* argv[])
 
 
   // Choosing forwarding strategy
+  std::cout << "  > Installing forwarding strategy" << std::endl;
   ndn::StrategyChoiceHelper::Install(m_allNodes, "/prefix", "/localhost/nfd/strategy/multicast");
 
   // Installing global routing interface on all nodes
-  ndn::GlobalRoutingHelper ndnGlobalRoutingHelper;
-  ndnGlobalRoutingHelper.Install(m_allNodes);
+  // std::cout << "  > Installing Global Router" << std::endl;
+  // ndn::GlobalRoutingHelper ndnGlobalRoutingHelper;
+  // ndnGlobalRoutingHelper.Install(m_allNodes);
 
   // Installing applications
   // Ptr<Node> node1 = m_groundStationNodes.Get(35); // 35,Krung-Thep-(Bangkok)
   // Ptr<Node> node2 = m_groundStationNodes.Get(20); // 20, Los-Angeles-Long-Beach-Santa-Ana
-  Ptr<Node> node1 = m_allNodes.Get(1184); // 35,Krung-Thep-(Bangkok)
-  Ptr<Node> node2 = m_allNodes.Get(1306); // 20, Los-Angeles-Long-Beach-Santa-Ana
-  std::string prefix1 = "/prefix";
-  std::string prefix2 = "/prefix";
+  Ptr<Node> node1 = m_allNodes.Get(1161); // 35,Krung-Thep-(Bangkok)
+  Ptr<Node> node2 = m_allNodes.Get(1183); // 20, Los-Angeles-Long-Beach-Santa-Ana
+  std::string prefix1 = "/uid-1161";
+  std::string prefix2 = "/uid-1183";
+  cout << "PREFIX: " << prefix2 << endl;
   // Consumer
   ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
   // Consumer will request /prefix/0, /prefix/1, ...
-  consumerHelper.SetPrefix(prefix1);
+  consumerHelper.SetPrefix(prefix2);
   consumerHelper.SetAttribute("Frequency", StringValue("2")); // 10 interests a second
   consumerHelper.Install(node1); // first node
 
   // Producer
   ndn::AppHelper producerHelper("ns3::ndn::Producer");
   // Producer will reply to all requests starting with /prefix
-  producerHelper.SetPrefix(prefix1);
+  producerHelper.SetPrefix(prefix2);
   producerHelper.SetAttribute("PayloadSize", StringValue("1024"));
   producerHelper.Install(node2); // last node
 
   // Add /prefix origins to ndn::GlobalRouter
-  ndnGlobalRoutingHelper.AddOrigins(prefix1, node2);
+  // ndnGlobalRoutingHelper.AddOrigins(prefix1, node2);
 
-  // Calculate and install FIBs
-  ndn::GlobalRoutingHelper::CalculateRoutes();
+  // // Calculate and install FIBs
+  // ndn::GlobalRoutingHelper::CalculateRoutes();
   // Setting up FIB schedules
 
   cout << "Setting up FIB schedules..."  << endl;
   // Install NDN stack on all nodes
   ndnHelper.UpdateAll();
-  leo::importDynamicState(m_allNodes, "scratch/data/routes_dir");
+  importDynamicStateSat(m_allNodes, "scratch/data/routes_dir_isl_test");
 
+  cout << "Starting the simulation"  << endl;
   Simulator::Stop(Seconds(20.0));
 
   Simulator::Run();
