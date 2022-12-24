@@ -589,6 +589,8 @@ def configure(conf):
     conf.load('command', tooldir=['waf-tools'])
     conf.load('gnu_dirs')
     conf.load('clang_compilation_database', tooldir=['waf-tools'])
+    conf.check_cfg(package='libpcap', lib='pcap', args=['--cflags', '--libs'], uselib_store='PCAP',
+                   pkg_config_path=os.environ.get('PKG_CONFIG_PATH', '%s/pkgconfig' % conf.env.LIBDIR))
 
     env = conf.env
 
@@ -1052,6 +1054,11 @@ def add_scenerios(bld):
         'scenarios/model/ground-station.cc',
         'scenarios/model/tle.cc',
         'scenarios/model/topo.cc'
+    ]
+    obj = bld.create_ns3_program('ndn-3', all_modules)
+    obj.source = [
+        'scenarios/ndn-test-01.cc',
+        'scenarios/helper/ndn-leo-stack-helper.cc',
     ]
 
 def _get_all_task_gen(self):

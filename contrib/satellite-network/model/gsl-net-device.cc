@@ -467,6 +467,7 @@ Address
 GSLNetDevice::GetBroadcast (void) const
 {
   NS_LOG_FUNCTION (this);
+  // return m_address;
   throw std::runtime_error("Broadcast not supported (only ARP would use broadcast, whose cache should have already been filled).");
 }
 
@@ -641,6 +642,7 @@ GSLNetDevice::PppToEther (uint16_t proto)
     {
     case 0x0021: return 0x0800;   //IPv4
     case 0x0057: return 0x86DD;   //IPv6
+    case 0x0077: return 0x7777;   //NDN
     default: NS_ASSERT_MSG (false, "PPP Protocol number not defined!");
     }
   return 0;
@@ -654,6 +656,7 @@ GSLNetDevice::EtherToPpp (uint16_t proto)
     {
     case 0x0800: return 0x0021;   //IPv4
     case 0x86DD: return 0x0057;   //IPv6
+    case 0x7777: return 0x0077;   //NDN
     default: NS_ASSERT_MSG (false, "PPP Protocol number not defined!");
     }
   return 0;
