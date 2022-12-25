@@ -241,6 +241,10 @@ private:
   shared_ptr<Face>
   PointToPointNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
                                 Ptr<NetDevice> netDevice) const;
+
+  shared_ptr<Face>
+  PointToPointLaserNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
+                                Ptr<NetDevice> netDevice) const;
   shared_ptr<Face>
   createAndRegisterFace(Ptr<Node> node, Ptr<L3Protocol> ndn, Ptr<NetDevice> device) const;
 

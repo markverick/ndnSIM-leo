@@ -1057,8 +1057,12 @@ def add_scenerios(bld):
     ]
     obj = bld.create_ns3_program('ndn-3', all_modules)
     obj.source = [
-        'scenarios/ndn-test-01.cc',
-        'scenarios/helper/ndn-leo-stack-helper.cc',
+        'scenarios/ndn-test-02.cc',
+        'scenarios/read-data.cc',
+        'scenarios/model/ground-station.cc',
+        'scenarios/model/tle.cc',
+        'scenarios/model/topo.cc',
+        'scenarios/helper/ndn-leo-stack-helper.cc'
     ]
 
 def _get_all_task_gen(self):

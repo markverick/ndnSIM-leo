@@ -24,6 +24,9 @@
 #include "ns3/string.h"
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
+#include "ns3/point-to-point-laser-net-device.h"
+#include "ns3/point-to-point-laser-channel.h"
+#include "ns3/point-to-point-laser-remote-channel.h"
 #include "ns3/node-list.h"
 #include "ns3/simulator.h"
 
@@ -66,6 +69,9 @@ LeoStackHelper::LeoStackHelper()
   m_netDeviceCallbacks.push_back(
     std::make_pair(PointToPointNetDevice::GetTypeId(),
                    MakeCallback(&LeoStackHelper::PointToPointNetDeviceCallback, this)));
+  m_netDeviceCallbacks.push_back(
+    std::make_pair(PointToPointLaserNetDevice::GetTypeId(),
+                   MakeCallback(&LeoStackHelper::PointToPointLaserNetDeviceCallback, this)));
   // default callback will be fired if non of others callbacks fit or did the job
 }
 
@@ -298,6 +304,45 @@ LeoStackHelper::PointToPointNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> nd
   return face;
 }
 
+shared_ptr<Face>
+LeoStackHelper::PointToPointLaserNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
+                                           Ptr<NetDevice> device) const
+{
+  NS_LOG_DEBUG("Creating point-to-point Face on node " << node->GetId());
+
+  Ptr<PointToPointLaserNetDevice> netDevice = DynamicCast<PointToPointLaserNetDevice>(device);
+  NS_ASSERT(netDevice != nullptr);
+
+  // access the other end of the link
+  Ptr<PointToPointLaserChannel> channel = DynamicCast<PointToPointLaserChannel>(netDevice->GetChannel());
+  NS_ASSERT(channel != nullptr);
+
+  Ptr<NetDevice> remoteNetDevice = channel->GetDevice(0);
+  if (remoteNetDevice->GetNode() == node)
+    remoteNetDevice = channel->GetDevice(1);
+
+  // Create an ndnSIM-specific transport instance
+  ::nfd::face::GenericLinkService::Options opts;
+  opts.allowFragmentation = true;
+  opts.allowReassembly = true;
+  opts.allowCongestionMarking = true;
+
+  auto linkService = make_unique<::nfd::face::GenericLinkService>(opts);
+
+  auto transport = make_unique<NetDeviceTransport>(node, netDevice,
+                                                   constructFaceUri(netDevice),
+                                                   constructFaceUri(remoteNetDevice));
+
+  auto face = std::make_shared<Face>(std::move(linkService), std::move(transport));
+  face->setMetric(1);
+
+  ndn->addFace(face);
+  NS_LOG_LOGIC("Node " << node->GetId() << ": added Face as face #"
+                       << face->getLocalUri());
+
+  return face;
+}
+
 void
 LeoStackHelper::Install(const std::string& nodeName) const
 {
@@ -359,7 +404,6 @@ LeoStackHelper::createAndRegisterFace(Ptr<Node> node, Ptr<L3Protocol> ndn, Ptr<N
         break;
     }
   }
-
   if (face == 0) {
     face = DefaultNetDeviceCallback(node, ndn, device);
   }
