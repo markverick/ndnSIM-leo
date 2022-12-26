@@ -420,6 +420,7 @@ void AddRouteGSL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> o
       NS_ASSERT_MSG(face != 0, "There is no face associated with the gsl link");
       cout << "ADD ROUTE: " << node->GetId() << ", " << prefix << ", " << face << ", " << metric << endl;
       ns3::ndn::FibHelper::AddRoute(node, prefix, face, metric);
+      netDeviceGS->SetDstAddress(netDevice->GetAddress());
     } else {
       // sat -> gs
       Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
@@ -427,6 +428,7 @@ void AddRouteGSL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> o
       shared_ptr<ns3::ndn::Face> face = ndn->getFaceByNetDevice(netDevice);
       NS_ASSERT_MSG(face != 0, "There is no face associated with the gsl link");
       ns3::ndn::FibHelper::AddRoute(node, prefix, face, metric);
+      netDevice->SetDstAddress(netDeviceGS->GetAddress());
     }
 
       // return;
@@ -634,6 +636,8 @@ void importDynamicStateSat(ns3::NodeContainer nodes, string dname) {
             
             // cout << "ROUTE: "<< current_node << ", " << prefix << ", " << next_hop << endl;
             // AddRouteAB(nodes.Get(current_node), prefix, nodes.Get(next_hop), 1);
+            
+            
             if (current_node >= m_satelliteNodes.GetN()) {
               ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node), prefix, nodes.Get(next_hop), 1);
             } else if(next_hop >= m_satelliteNodes.GetN()) {
@@ -654,7 +658,7 @@ main(int argc, char* argv[])
   Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
 
   // Configuration
-  string ns3_config = "scenarios/config/isl_test.properties";
+  string ns3_config = "scenarios/config/gsl_test.properties";
   readConfig(ns3_config);
   m_satellite_network_dir = getConfigParamOrDefault("satellite_network_dir", "network_dir");
   m_satellite_network_routes_dir =  getConfigParamOrDefault("satellite_network_routes_dir", "network_dir/routes_dir");

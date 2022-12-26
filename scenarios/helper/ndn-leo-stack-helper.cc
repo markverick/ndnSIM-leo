@@ -27,6 +27,8 @@
 #include "ns3/point-to-point-laser-net-device.h"
 #include "ns3/point-to-point-laser-channel.h"
 #include "ns3/point-to-point-laser-remote-channel.h"
+#include "ns3/gsl-net-device.h"
+#include "ns3/gsl-channel.h"
 #include "ns3/node-list.h"
 #include "ns3/simulator.h"
 
@@ -72,6 +74,9 @@ LeoStackHelper::LeoStackHelper()
   m_netDeviceCallbacks.push_back(
     std::make_pair(PointToPointLaserNetDevice::GetTypeId(),
                    MakeCallback(&LeoStackHelper::PointToPointLaserNetDeviceCallback, this)));
+  m_netDeviceCallbacks.push_back(
+    std::make_pair(GSLNetDevice::GetTypeId(),
+                   MakeCallback(&LeoStackHelper::GSLNetDeviceCallback, this)));
   // default callback will be fired if non of others callbacks fit or did the job
 }
 
@@ -332,6 +337,42 @@ LeoStackHelper::PointToPointLaserNetDeviceCallback(Ptr<Node> node, Ptr<L3Protoco
   auto transport = make_unique<NetDeviceTransport>(node, netDevice,
                                                    constructFaceUri(netDevice),
                                                    constructFaceUri(remoteNetDevice));
+
+  auto face = std::make_shared<Face>(std::move(linkService), std::move(transport));
+  face->setMetric(1);
+
+  ndn->addFace(face);
+  NS_LOG_LOGIC("Node " << node->GetId() << ": added Face as face #"
+                       << face->getLocalUri());
+
+  return face;
+}
+
+shared_ptr<Face>
+LeoStackHelper::GSLNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
+                                           Ptr<NetDevice> device) const
+{
+  NS_LOG_DEBUG("Creating GSL Face on node " << node->GetId());
+
+  Ptr<GSLNetDevice> netDevice = DynamicCast<GSLNetDevice>(device);
+  NS_ASSERT(netDevice != nullptr);
+
+  // access the other end of the link
+  Ptr<GSLChannel> channel = DynamicCast<GSLChannel>(netDevice->GetChannel());
+  NS_ASSERT(channel != nullptr);
+
+  // Create an ndnSIM-specific transport instance
+  // Creating one face and change transport later
+  ::nfd::face::GenericLinkService::Options opts;
+  opts.allowFragmentation = true;
+  opts.allowReassembly = true;
+  opts.allowCongestionMarking = true;
+
+  auto linkService = make_unique<::nfd::face::GenericLinkService>(opts);
+
+  auto transport = make_unique<NetDeviceTransport>(node, netDevice,
+                                                   constructFaceUri(netDevice),
+                                                   constructFaceUri(netDevice));
 
   auto face = std::make_shared<Face>(std::move(linkService), std::move(transport));
   face->setMetric(1);

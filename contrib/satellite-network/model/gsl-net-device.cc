@@ -442,6 +442,19 @@ GSLNetDevice::GetAddress (void) const
   return m_address;
 }
 
+void
+GSLNetDevice::SetDstAddress (Address address)
+{
+  NS_LOG_FUNCTION (this << address);
+  m_dst_address = Mac48Address::ConvertFrom (address);
+}
+
+Address
+GSLNetDevice::GetDstAddress (void) const
+{
+  return m_dst_address;
+}
+
 bool
 GSLNetDevice::IsLinkUp (void) const
 {
@@ -467,8 +480,11 @@ Address
 GSLNetDevice::GetBroadcast (void) const
 {
   NS_LOG_FUNCTION (this);
-  // return m_address;
-  throw std::runtime_error("Broadcast not supported (only ARP would use broadcast, whose cache should have already been filled).");
+  return GetDstAddress();
+  // return Mac48Address ("00:ff:ff:ff:ff:ff");
+  // NS_LOG_FUNCTION (this);
+  // // return m_address;
+  // throw std::runtime_error("Broadcast not supported (only ARP would use broadcast, whose cache should have already been filled).");
 }
 
 bool
