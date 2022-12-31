@@ -395,30 +395,30 @@ void AddRouteGSL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> o
     satNode = otherNode;
     gsNode = node;
   }
-  cout << gsNode->GetId() << "," << gsNode->GetNDevices() << endl;
-  cout << satNode->GetId() << "," << satNode->GetNDevices() << endl;
+  // cout << gsNode->GetId() << "," << gsNode->GetNDevices() << endl;
+  // cout << satNode->GetId() << "," << satNode->GetNDevices() << endl;
   Ptr<GSLNetDevice> netDeviceGS = DynamicCast<GSLNetDevice>(gsNode->GetDevice(0));
   for (uint32_t deviceId = 0; deviceId < satNode->GetNDevices(); deviceId++) {
     Ptr<GSLNetDevice> netDevice = DynamicCast<GSLNetDevice>(satNode->GetDevice(deviceId));
     if (netDevice == 0)
       continue;
     Ptr<Channel> channel = netDevice->GetChannel();
-    cout << channel->GetId() << ", " << netDeviceGS->GetChannel()->GetId() << endl;
+    // cout << channel->GetId() << ", " << netDeviceGS->GetChannel()->GetId() << endl;
     if (channel == 0)
       continue;
     // cout << channel->GetNDevices() << endl;
-    cout << gsNode->GetId() << ": " << netDeviceGS << ", "  << satNode->GetId() << ": " << netDevice << endl;
+    // cout << gsNode->GetId() << ": " << netDeviceGS << ", "  << satNode->GetId() << ": " << netDevice << endl;
     // cout << node << ": " << node->GetId() << ", " << otherNode << ": " << otherNode->GetId() << endl;
-    cout << "GSL 3" << endl;
     // cout << channel->GetDevice(1683) << ": " << channel->GetDevice(1683)->GetNode()->GetId() << ", " << channel->GetDevice(250) << ": " << channel->GetDevice(250)->GetNode()->GetId() << endl;
 
+    // TODO: Clean up
     if (node == gsNode) {
       // gs -> sat
       Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
       NS_ASSERT_MSG(ndn != 0, "Ndn stack should be installed on the node");
       shared_ptr<ns3::ndn::Face> face = ndn->getFaceByNetDevice(netDeviceGS);
       NS_ASSERT_MSG(face != 0, "There is no face associated with the gsl link");
-      cout << "ADD ROUTE: " << node->GetId() << ", " << prefix << ", " << face << ", " << metric << endl;
+      // cout << "ADD ROUTE: " << node->GetId() << ", " << prefix << ", " << face << ", " << metric << endl;
       ns3::ndn::FibHelper::AddRoute(node, prefix, face, metric);
       netDeviceGS->SetDstAddress(netDevice->GetAddress());
     } else {
@@ -658,7 +658,7 @@ main(int argc, char* argv[])
   Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
 
   // Configuration
-  string ns3_config = "scenarios/config/gsl_test.properties";
+  string ns3_config = "scenarios/config/isl_test.properties";
   readConfig(ns3_config);
   m_satellite_network_dir = getConfigParamOrDefault("satellite_network_dir", "network_dir");
   m_satellite_network_routes_dir =  getConfigParamOrDefault("satellite_network_routes_dir", "network_dir/routes_dir");
@@ -709,7 +709,7 @@ main(int argc, char* argv[])
 
   // Choosing forwarding strategy
   std::cout << "  > Installing forwarding strategy" << std::endl;
-  ndn::StrategyChoiceHelper::Install(m_allNodes, "/prefix", "/localhost/nfd/strategy/best-route");
+  ndn::StrategyChoiceHelper::Install(m_allNodes, "/prefix", "/localhost/nfd/strategy/multicast");
 
   // Installing global routing interface on all nodes
   // std::cout << "  > Installing Global Router" << std::endl;
