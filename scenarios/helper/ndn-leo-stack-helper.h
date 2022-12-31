@@ -42,7 +42,7 @@ class Node;
 
 namespace ndn {
 
-class L3Protocol;
+class SatL3Protocol;
 
 /**
  * @ingroup ndn
@@ -65,7 +65,7 @@ public:
   virtual ~LeoStackHelper();
 
   /**
-   * @brief Set parameters of NdnL3Protocol
+   * @brief Set parameters of NdnSatL3Protocol
    */
   void
   SetStackAttributes(const std::string& attr1 = "", const std::string& value1 = "",
@@ -85,7 +85,7 @@ public:
   void
   setPolicy(const std::string& policy);
 
-  typedef Callback<shared_ptr<Face>, Ptr<Node>, Ptr<L3Protocol>, Ptr<NetDevice>>
+  typedef Callback<shared_ptr<Face>, Ptr<Node>, Ptr<SatL3Protocol>, Ptr<NetDevice>>
     FaceCreateCallback;
 
   /**
@@ -236,22 +236,22 @@ private:
 
 private:
   shared_ptr<Face>
-  DefaultNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn, Ptr<NetDevice> netDevice) const;
+  DefaultNetDeviceCallback(Ptr<Node> node, Ptr<SatL3Protocol> ndn, Ptr<NetDevice> netDevice) const;
 
   shared_ptr<Face>
-  PointToPointNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
+  PointToPointNetDeviceCallback(Ptr<Node> node, Ptr<SatL3Protocol> ndn,
                                 Ptr<NetDevice> netDevice) const;
 
   shared_ptr<Face>
-  PointToPointLaserNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
+  PointToPointLaserNetDeviceCallback(Ptr<Node> node, Ptr<SatL3Protocol> ndn,
                                 Ptr<NetDevice> netDevice) const;
 
   shared_ptr<Face>
-  GSLNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
+  GSLNetDeviceCallback(Ptr<Node> node, Ptr<SatL3Protocol> ndn,
                                 Ptr<NetDevice> netDevice) const;
 
   shared_ptr<Face>
-  createAndRegisterFace(Ptr<Node> node, Ptr<L3Protocol> ndn, Ptr<NetDevice> device) const;
+  createAndRegisterFace(Ptr<Node> node, Ptr<SatL3Protocol> ndn, Ptr<NetDevice> device) const;
 
   bool m_isForwarderStatusManagerDisabled;
   bool m_isStrategyChoiceManagerDisabled;

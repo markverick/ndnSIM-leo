@@ -38,7 +38,8 @@
 
 #include "ns3/ndnSIM/model/ndn-l3-protocol.hpp"
 #include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
-// #include "../model/ndn-sat-net-device-transport.hpp"
+#include "../model/ndn-gsl-net-device-transport.h"
+#include <ndn-cxx/encoding/nfd-constants.hpp>
 #include "utils/ndn-time.hpp"
 #include "utils/dummy-keychain.hpp"
 
@@ -67,7 +68,7 @@ LeoStackHelper::LeoStackHelper()
 
   m_csPolicyCreationFunc = m_csPolicies["nfd::cs::lru"];
 
-  m_ndnFactory.SetTypeId("ns3::ndn::L3Protocol");
+  m_ndnFactory.SetTypeId("ns3::ndn::SatL3Protocol");
 
   m_netDeviceCallbacks.push_back(
     std::make_pair(PointToPointNetDevice::GetTypeId(),
@@ -161,7 +162,7 @@ LeoStackHelper::InstallAll() const
 void
 LeoStackHelper::Install(Ptr<Node> node) const
 {
-  if (node->GetObject<L3Protocol>() != 0) {
+  if (node->GetObject<SatL3Protocol>() != 0) {
     NS_FATAL_ERROR("Cannot re-install NDN stack on node "
                    << node->GetId());
     return;
@@ -174,7 +175,7 @@ void
 LeoStackHelper::doInstall(Ptr<Node> node) const
 {
   // async install to ensure proper context
-  Ptr<L3Protocol> ndn = m_ndnFactory.Create<L3Protocol>();
+  Ptr<SatL3Protocol> ndn = m_ndnFactory.Create<SatL3Protocol>();
 
   if (m_isForwarderStatusManagerDisabled) {
     ndn->getConfig().put("ndnSIM.disable_forwarder_status_manager", true);
@@ -188,7 +189,7 @@ LeoStackHelper::doInstall(Ptr<Node> node) const
 
   ndn->setCsReplacementPolicy(m_csPolicyCreationFunc);
 
-  // Aggregate L3Protocol on node (must be after setting ndnSIM CS)
+  // Aggregate SatL3Protocol on node (must be after setting ndnSIM CS)
   node->AggregateObject(ndn);
 
   for (uint32_t index = 0; index < node->GetNDevices(); index++) {
@@ -244,7 +245,7 @@ constructFaceUri(Ptr<NetDevice> netDevice)
 
 
 shared_ptr<Face>
-LeoStackHelper::DefaultNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
+LeoStackHelper::DefaultNetDeviceCallback(Ptr<Node> node, Ptr<SatL3Protocol> ndn,
                                       Ptr<NetDevice> netDevice) const
 {
   NS_LOG_DEBUG("Creating default Face on node " << node->GetId());
@@ -272,7 +273,7 @@ LeoStackHelper::DefaultNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
 }
 
 shared_ptr<Face>
-LeoStackHelper::PointToPointNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
+LeoStackHelper::PointToPointNetDeviceCallback(Ptr<Node> node, Ptr<SatL3Protocol> ndn,
                                            Ptr<NetDevice> device) const
 {
   NS_LOG_DEBUG("Creating point-to-point Face on node " << node->GetId());
@@ -311,7 +312,7 @@ LeoStackHelper::PointToPointNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> nd
 }
 
 shared_ptr<Face>
-LeoStackHelper::PointToPointLaserNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
+LeoStackHelper::PointToPointLaserNetDeviceCallback(Ptr<Node> node, Ptr<SatL3Protocol> ndn,
                                            Ptr<NetDevice> device) const
 {
   NS_LOG_DEBUG("Creating point-to-point Face on node " << node->GetId());
@@ -350,7 +351,7 @@ LeoStackHelper::PointToPointLaserNetDeviceCallback(Ptr<Node> node, Ptr<L3Protoco
 }
 
 shared_ptr<Face>
-LeoStackHelper::GSLNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
+LeoStackHelper::GSLNetDeviceCallback(Ptr<Node> node, Ptr<SatL3Protocol> ndn,
                                            Ptr<NetDevice> device) const
 {
   NS_LOG_DEBUG("Creating GSL Face on node " << node->GetId());
@@ -358,7 +359,7 @@ LeoStackHelper::GSLNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
   Ptr<GSLNetDevice> netDevice = DynamicCast<GSLNetDevice>(device);
   NS_ASSERT(netDevice != nullptr);
 
-  // access the other end of the link
+  // access the shared channel of the link
   Ptr<GSLChannel> channel = DynamicCast<GSLChannel>(netDevice->GetChannel());
   NS_ASSERT(channel != nullptr);
 
@@ -373,7 +374,10 @@ LeoStackHelper::GSLNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
 
   auto transport = make_unique<NetDeviceTransport>(node, netDevice,
                                                    constructFaceUri(netDevice),
-                                                   constructFaceUri(netDevice));
+                                                   constructFaceUri(netDevice),
+                                                   ::ndn::nfd::FACE_SCOPE_NON_LOCAL,
+                                                   ::ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+                                                   ::ndn::nfd::LINK_TYPE_AD_HOC);
 
   auto face = std::make_shared<Face>(std::move(linkService), std::move(transport));
   face->setMetric(1);
@@ -395,12 +399,12 @@ LeoStackHelper::Install(const std::string& nodeName) const
 void
 LeoStackHelper::Update(Ptr<Node> node)
 {
-  if (node->GetObject<L3Protocol>() == 0) {
+  if (node->GetObject<SatL3Protocol>() == 0) {
     Install(node);
     return;
   }
 
-  Ptr<L3Protocol> ndn = node->GetObject<L3Protocol>();
+  Ptr<SatL3Protocol> ndn = node->GetObject<SatL3Protocol>();
 
   for (uint32_t index = 0; index < node->GetNDevices(); index++) {
 
@@ -434,7 +438,7 @@ LeoStackHelper::UpdateAll()
 }
 
 shared_ptr<Face>
-LeoStackHelper::createAndRegisterFace(Ptr<Node> node, Ptr<L3Protocol> ndn, Ptr<NetDevice> device) const
+LeoStackHelper::createAndRegisterFace(Ptr<Node> node, Ptr<SatL3Protocol> ndn, Ptr<NetDevice> device) const
 {
   shared_ptr<Face> face;
 
@@ -473,7 +477,7 @@ void
 LeoStackHelper::SetLinkDelayAsFaceMetric()
 {
   for (uint32_t i = 0; i < NodeList::GetNNodes(); ++i) {
-    auto ndn = NodeList::GetNode(i)->GetObject<L3Protocol>();
+    auto ndn = NodeList::GetNode(i)->GetObject<SatL3Protocol>();
     if (ndn == nullptr)
       continue;
 
