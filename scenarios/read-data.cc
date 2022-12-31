@@ -18,10 +18,6 @@
 #include "ns3/ndnSIM-module.h"
 #include "ns3/ndnSIM/helper/ndn-fib-helper.hpp"
 
-#include "model/point-to-point-sat-net-device.h"
-#include "model/point-to-point-sat-channel.h"
-#include "model/point-to-point-sat-remote-channel.h"
-
 
 using namespace std;
 using namespace ns3;
