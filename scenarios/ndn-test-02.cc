@@ -42,7 +42,6 @@
 #include "ns3/ipv4.h"
 #include "read-data.h"
 #include "helper/ndn-leo-stack-helper.h"
-#include "model/ndn-sat-l3-protocol.h"
 
 namespace ns3 {
 
@@ -298,7 +297,7 @@ void AddRouteISL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> o
       continue;
     if (channel->GetDevice(0)->GetNode() == otherNode
         || channel->GetDevice(1)->GetNode() == otherNode) {
-      Ptr<ns3::ndn::SatL3Protocol> ndn = node->GetObject<ns3::ndn::SatL3Protocol>();
+      Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
       NS_ASSERT_MSG(ndn != 0, "Ndn stack should be installed on the node");
 
       shared_ptr<ns3::ndn::Face> face = ndn->getFaceByNetDevice(netDevice);
@@ -321,8 +320,8 @@ void AddRouteISL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> o
   //   // cout << node << ": " << node->GetId() << ", " << otherNode << ": " << otherNode->GetId() << endl;
   //   cout << "GSL 3" << endl;
   //   cout << channel->GetDevice(1683) << ": " << channel->GetDevice(1683)->GetNode()->GetId() << ", " << channel->GetDevice(250) << ": " << channel->GetDevice(250)->GetNode()->GetId() << endl;
-  //   Ptr<ns3::ndn::SatL3Protocol> ndn = node->GetObject<ns3::ndn::SatL3Protocol>();
-  //   // Ptr<ns3::ndn::SatL3Protocol> otherNdn = otherNode->GetObject<ns3::ndn::SatL3Protocol>();
+  //   Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
+  //   // Ptr<ns3::ndn::L3Protocol> otherNdn = otherNode->GetObject<ns3::ndn::L3Protocol>();
   //   NS_ASSERT_MSG(ndn != 0, "Ndn stack should be installed on the node");
   //   // Ptr<GSLNetDevice> otherNetDevice = DynamicCast<GSLNetDevice>(channel->GetDevice(otherNode->GetId()));
   //   // cout << otherNetDevice << endl;
@@ -368,7 +367,7 @@ void AddRouteGSL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> o
     // TODO: Clean up
     if (node == gsNode) {
       // gs -> sat
-      Ptr<ns3::ndn::SatL3Protocol> ndn = node->GetObject<ns3::ndn::SatL3Protocol>();
+      Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
       NS_ASSERT_MSG(ndn != 0, "Ndn stack should be installed on the node");
       shared_ptr<ns3::ndn::Face> face = ndn->getFaceByNetDevice(netDeviceGS);
       NS_ASSERT_MSG(face != 0, "There is no face associated with the gsl link");
@@ -378,7 +377,7 @@ void AddRouteGSL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> o
     } else {
       // sat -> gs
       if (prefix != m_prefix) continue;
-      Ptr<ns3::ndn::SatL3Protocol> ndn = node->GetObject<ns3::ndn::SatL3Protocol>();
+      Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
       NS_ASSERT_MSG(ndn != 0, "Ndn stack should be installed on the node");
       shared_ptr<ns3::ndn::Face> face = ndn->getFaceByNetDevice(netDevice);
       NS_ASSERT_MSG(face != 0, "There is no face associated with the gsl link");

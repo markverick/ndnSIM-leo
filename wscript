@@ -1063,8 +1063,6 @@ def add_scenerios(bld):
         'scenarios/model/tle.cc',
         'scenarios/model/topo.cc',
         'scenarios/helper/ndn-leo-stack-helper.cc',
-        'scenarios/model/ndn-gsl-net-device-transport.cc',
-        'scenarios/model/ndn-sat-l3-protocol.cc'
     ]
 
 def _get_all_task_gen(self):
