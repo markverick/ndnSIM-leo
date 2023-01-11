@@ -365,9 +365,9 @@ LeoStackHelper::GSLNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
   // Create an ndnSIM-specific transport instance
   // Creating one face and change transport later
   ::nfd::face::GenericLinkService::Options opts;
-  opts.allowFragmentation = true;
-  opts.allowReassembly = true;
-  opts.allowCongestionMarking = true;
+  opts.allowFragmentation = false;
+  opts.allowReassembly = false;
+  opts.allowCongestionMarking = false;
 
   auto linkService = make_unique<::nfd::face::GenericLinkService>(opts);
 
@@ -375,7 +375,7 @@ LeoStackHelper::GSLNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
                                                    constructFaceUri(netDevice),
                                                    constructFaceUri(netDevice),
                                                    ::ndn::nfd::FACE_SCOPE_NON_LOCAL,
-                                                   ::ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+                                                   ::ndn::nfd::FACE_PERSISTENCY_PERMANENT,
                                                    ::ndn::nfd::LINK_TYPE_AD_HOC);
 
   auto face = std::make_shared<Face>(std::move(linkService), std::move(transport));

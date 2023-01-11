@@ -91,6 +91,7 @@ GSLChannel::TransmitStart (
 bool
 GSLChannel::TransmitTo(Ptr<const Packet> p, Ptr<GSLNetDevice> srcNetDevice, Ptr<GSLNetDevice> destNetDevice, Time txTime, bool isSameSystem) {
 
+  std::cout << "GSL2" << std::endl;
   // Mobility models for source and destination
   Ptr<MobilityModel> senderMobility = srcNetDevice->GetNode()->GetObject<MobilityModel>();
   Ptr<Node> receiverNode = destNetDevice->GetNode();
@@ -114,6 +115,7 @@ GSLChannel::TransmitTo(Ptr<const Packet> p, Ptr<GSLNetDevice> srcNetDevice, Ptr<
           destNetDevice,
           p->Copy ()
   );
+  std::cout << destNetDevice->GetAddress() << std::endl;
 
   // Re-enabled below code if distributed is again enabled:
   //  if (isSameSystem) {

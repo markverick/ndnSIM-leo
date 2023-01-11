@@ -41,6 +41,7 @@
 #include "ns3/point-to-point-laser-net-device.h"
 #include "ns3/ipv4.h"
 #include "read-data.h"
+#include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
 #include "helper/ndn-leo-stack-helper.h"
 
 namespace ns3 {
@@ -350,13 +351,12 @@ void AddRouteGSL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> o
   }
   // cout << gsNode->GetId() << "," << gsNode->GetNDevices() << endl;
   // cout << satNode->GetId() << "," << satNode->GetNDevices() << endl;
-  Ptr<GSLNetDevice> netDeviceGS = DynamicCast<GSLNetDevice>(gsNode->GetDevice(0));
+  Ptr<GSLNetDevice> gsNetDevice = DynamicCast<GSLNetDevice>(gsNode->GetDevice(0));
   for (uint32_t deviceId = 0; deviceId < satNode->GetNDevices(); deviceId++) {
-    Ptr<GSLNetDevice> netDevice = DynamicCast<GSLNetDevice>(satNode->GetDevice(deviceId));
-    if (netDevice == 0)
+    Ptr<GSLNetDevice> satNetDevice = DynamicCast<GSLNetDevice>(satNode->GetDevice(deviceId));
+    if (satNetDevice == 0)
       continue;
-    Ptr<Channel> channel = netDevice->GetChannel();
-    // cout << channel->GetId() << ", " << netDeviceGS->GetChannel()->GetId() << endl;
+    Ptr<Channel> channel = satNetDevice->GetChannel();
     if (channel == 0)
       continue;
     // cout << channel->GetNDevices() << endl;
@@ -364,26 +364,36 @@ void AddRouteGSL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> o
     // cout << node << ": " << node->GetId() << ", " << otherNode << ": " << otherNode->GetId() << endl;
     // cout << channel->GetDevice(1683) << ": " << channel->GetDevice(1683)->GetNode()->GetId() << ", " << channel->GetDevice(250) << ": " << channel->GetDevice(250)->GetNode()->GetId() << endl;
 
-    // TODO: Clean up
+    Ptr<ns3::ndn::L3Protocol> gsNdn = gsNode->GetObject<ns3::ndn::L3Protocol>();
+    NS_ASSERT_MSG(gsNdn != 0, "Ndn stack should be installed on the ground station node");
+    shared_ptr<ns3::ndn::Face> gsFace = gsNdn->getFaceByNetDevice(gsNetDevice);
+    NS_ASSERT_MSG(gsFace != 0, "There is no face associated with the gsl link");
+    ns3::ndn::NetDeviceTransport* gsTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>(gsFace->getTransport());
+    NS_ASSERT_MSG(gsTransport != 0, "There is no valid transport associated with the ground station face");
+
+    Ptr<ns3::ndn::L3Protocol> satNdn = satNode->GetObject<ns3::ndn::L3Protocol>();
+    NS_ASSERT_MSG(satNdn != 0, "Ndn stack should be installed on the satellite node");
+    shared_ptr<ns3::ndn::Face> satFace = satNdn->getFaceByNetDevice(satNetDevice);
+    NS_ASSERT_MSG(satFace != 0, "There is no face associated with the gsl link");
+    // TODO: Maybe unsafe pointer, fix later
+    ns3::ndn::NetDeviceTransport* satTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>(satFace->getTransport());
+    NS_ASSERT_MSG(satTransport != 0, "There is no valid transport associated with the ground station face");
+
     if (node == gsNode) {
       // gs -> sat
-      Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
-      NS_ASSERT_MSG(ndn != 0, "Ndn stack should be installed on the node");
-      shared_ptr<ns3::ndn::Face> face = ndn->getFaceByNetDevice(netDeviceGS);
-      NS_ASSERT_MSG(face != 0, "There is no face associated with the gsl link");
-      // cout << "ADD ROUTE: " << node->GetId() << ", " << prefix << ", " << face << ", " << metric << endl;
-      ns3::ndn::FibHelper::AddRoute(node, prefix, face, metric);
-      netDeviceGS->SetDstAddress(netDevice->GetAddress());
+      ns3::ndn::FibHelper::AddRoute(node, prefix, gsFace, metric);
+      gsTransport->AddBroadcastAddress(satNetDevice->GetAddress());
+      satTransport->AddBroadcastAddress(gsNetDevice->GetAddress());
+      // netDeviceGS->SetDstAddress(netDevice->GetAddress());
     } else {
       // sat -> gs
-      if (prefix != m_prefix) continue;
-      Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
-      NS_ASSERT_MSG(ndn != 0, "Ndn stack should be installed on the node");
-      shared_ptr<ns3::ndn::Face> face = ndn->getFaceByNetDevice(netDevice);
-      NS_ASSERT_MSG(face != 0, "There is no face associated with the gsl link");
-      ns3::ndn::FibHelper::AddRoute(node, prefix, face, metric);
-      cout << "SAT->GS: " << deviceId << "," << netDevice->GetAddress() << " -> " << netDeviceGS->GetAddress() << endl;
-      netDevice->SetDstAddress(netDeviceGS->GetAddress());
+      
+      // cout << "SAT->GS: " << deviceId << "," << satNetDevice->GetAddress() << " -> " << gsNetDevice->GetAddress() << endl;
+      ns3::ndn::FibHelper::AddRoute(node, prefix, satFace, metric);
+      // cout << "ADD BROADCAST: " << satNetDevice->GetAddress() << ", " << gsNetDevice->GetAddress() << endl;
+      gsTransport->AddBroadcastAddress(satNetDevice->GetAddress());
+      satTransport->AddBroadcastAddress(gsNetDevice->GetAddress());
+      // netDevice->SetDstAddress(netDeviceGS->GetAddress());
     }
 
       // return;
@@ -445,50 +455,6 @@ void CreateGSLs() {
   // tch_gsl.Install(devices);
   std::cout << "    >> Finished installing traffic control layer qdisc which will be removed later" << std::endl;
 
-  // Assign IP addresses
-  //
-  // This is slow because of an inefficient implementation, if you want to speed it up, you can need to edit:
-  // src/internet/helper/ipv4-address-helper.cc
-  //
-  // And then within function Ipv4AddressHelper::NewAddress (void), comment out:
-  // Ipv4AddressGenerator::AddAllocated (addr);
-  //
-  // Beware that if you do this, and there are IP assignment conflicts, they are not detected.
-  //
-  // std::cout << "    >> Assigning IP addresses..." << std::endl;
-  // std::cout << "       (with many interfaces, this can take long due to an inefficient IP assignment conflict checker)" << std::endl;
-  // std::cout << "       Progress (as there are more entries, it becomes slower):" << std::endl;
-  // int64_t start_time_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-  // int64_t last_time_ns = start_time_ns;
-  // for (uint32_t i = 0; i < devices.GetN(); i++) {
-
-  //     // Assign IPv4 address
-  //     m_ipv4_helper.Assign(devices.Get(i));
-  //     m_ipv4_helper.NewNetwork();
-
-  //     // Give a progress update if at an even 10%
-  //     int update_interval = (int) std::ceil(devices.GetN() / 10.0);
-  //     if (((i + 1) % update_interval) == 0 || (i + 1) == devices.GetN()) {
-  //         int64_t now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-  //         printf("       - %.2f%% (t = %.2f s, update took %.2f s)\n",
-  //             (float) (i + 1) / (float) devices.GetN() * 100.0,
-  //             (now_ns - start_time_ns) / 1e9,
-  //             (now_ns - last_time_ns) / 1e9
-  //         );
-  //         last_time_ns = now_ns;
-  //     }
-
-  // }
-  // std::cout << "    >> Finished assigning IPs" << std::endl;
-
-  // Remove the traffic control layer (must be done here, else the Ipv4 helper will assign a default one)
-  // TrafficControlHelper tch_uninstaller;
-  // std::cout << "    >> Removing traffic control layers (qdiscs)..." << std::endl;
-  // for (uint32_t i = 0; i < devices.GetN(); i++) {
-  //     tch_uninstaller.Uninstall(devices.Get(i));
-  // }
-  // std::cout << "    >> Finished removing GSL queueing disciplines" << std::endl;
-
   // Check that all interfaces were created
   NS_ABORT_MSG_IF(total_num_gsl_ifs != devices.GetN(), "Not the expected amount of interfaces has been created.");
 
@@ -524,14 +490,7 @@ void importDynamicStateSat(ns3::NodeContainer nodes, string dname) {
             next_hop = stoi(result[2]);
             // Add AddRoute schedule
             prefix = "prefix/uid-" + result[1];
-
-            // if (prefix != m_prefix) {
-            //   continue;
-            // }
-            
-            // cout << "ROUTE: "<< current_node << ", " << prefix << ", " << next_hop << endl;
-            // AddRouteAB(nodes.Get(current_node), prefix, nodes.Get(next_hop), 1);
-            
+  
             if (current_node >= m_satelliteNodes.GetN()) {
               ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node), prefix, nodes.Get(next_hop), 1);
             } else if(next_hop >= m_satelliteNodes.GetN()) {
@@ -594,28 +553,18 @@ main(int argc, char* argv[])
   // ndnHelper.SetDefaultRoutes(true);
   ndnHelper.Install(m_allNodes);
 
-  // // ARP caches
-  // std::cout << "  > Populating ARP caches" << std::endl;
-  // PopulateArpCaches();
-
-
   std::cout << "  > Installed NDN stacks" << std::endl;
 
   // Choosing forwarding strategy
   std::cout << "  > Installing forwarding strategy" << std::endl;
   ndn::StrategyChoiceHelper::Install(m_allNodes, "/prefix", "/localhost/nfd/strategy/multicast");
 
-  // Installing global routing interface on all nodes
-  // std::cout << "  > Installing Global Router" << std::endl;
-  // ndn::GlobalRoutingHelper ndnGlobalRoutingHelper;
-  // ndnGlobalRoutingHelper.Install(m_allNodes);
-
   // Installing applications
   std::string prefix = "prefix/uid-";
   int node1_id = stoi(getConfigParamOrDefault("consumer_id", "0"));
   int node2_id = stoi(getConfigParamOrDefault("producer_id", "0"));
-  Ptr<Node> node1 = m_allNodes.Get(node1_id); // 35,Krung-Thep-(Bangkok)
-  Ptr<Node> node2 = m_allNodes.Get(node2_id); // 20, Los-Angeles-Long-Beach-Santa-Ana
+  Ptr<Node> node1 = m_allNodes.Get(node1_id);
+  Ptr<Node> node2 = m_allNodes.Get(node2_id);
   std::string prefix1 = prefix + to_string(node1_id);
   std::string prefix2 = prefix + to_string(node2_id);
   m_prefix = prefix2;
@@ -634,22 +583,12 @@ main(int argc, char* argv[])
   producerHelper.SetAttribute("PayloadSize", StringValue("1024"));
   producerHelper.Install(node2); // last node
 
-  // Add /prefix origins to ndn::GlobalRouter
-  // ndnGlobalRoutingHelper.AddOrigins(prefix1, node2);
-
-  // // Calculate and install FIBs
-  // ndn::GlobalRoutingHelper::CalculateRoutes();
-  // Setting up FIB schedules
-
-  // Install NDN stack on all nodes
-  // cout << "Updating ndnStack.." << endl;
-  // ndnHelper.UpdateAll();
   cout << "Setting up FIB schedules..."  << endl;
 
   importDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
 
   cout << "Starting the simulation"  << endl;
-  Simulator::Stop(Seconds(20.0));
+  Simulator::Stop(Seconds(5.0));
 
   Simulator::Run();
   Simulator::Destroy();
