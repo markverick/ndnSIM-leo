@@ -486,7 +486,6 @@ Address
 PointToPointLaserNetDevice::GetBroadcast (void) const
 {
   NS_LOG_FUNCTION (this);
-  std::cout << "TEST" << std::endl;
   return Mac48Address ("ff:ff:ff:ff:ff:ff");
 }
 
@@ -531,7 +530,6 @@ PointToPointLaserNetDevice::Send (
   const Address &dest, 
   uint16_t protocolNumber)
 {
-  std::cout << "TEST2" << std::endl;
   NS_LOG_FUNCTION (this << packet << dest << protocolNumber);
   NS_LOG_LOGIC ("p=" << packet << ", dest=" << &dest);
   NS_LOG_LOGIC ("UID is " << packet->GetUid ());

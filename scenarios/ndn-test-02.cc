@@ -511,7 +511,7 @@ main(int argc, char* argv[])
   Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
 
   // Configuration
-  string ns3_config = "scenarios/config/3nodes_test.properties";
+  string ns3_config = "scenarios/config/NY_tokyo_test.properties";
   readConfig(ns3_config);
   m_satellite_network_dir = getConfigParamOrDefault("satellite_network_dir", "network_dir");
   m_satellite_network_routes_dir =  getConfigParamOrDefault("satellite_network_routes_dir", "network_dir/routes_dir");

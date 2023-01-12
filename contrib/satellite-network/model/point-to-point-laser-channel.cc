@@ -107,7 +107,7 @@ PointToPointLaserChannel::TransmitStart (
                                   txTime + delay, &PointToPointLaserNetDevice::Receive,
                                   m_link[wire].m_dst, p->Copy ());
 
-  std::cout << "ISL: " << src->GetNode()->GetId() << " -> " << m_link[wire].m_dst->GetNode()->GetId() << std::endl;
+  // std::cout << "ISL: " << src->GetNode()->GetId() << " -> " << m_link[wire].m_dst->GetNode()->GetId() << std::endl;
   // Call the tx anim callback on the net device
   m_txrxPointToPoint (p, src, m_link[wire].m_dst, txTime, txTime + delay);
   return true;
