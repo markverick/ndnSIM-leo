@@ -1,7 +1,7 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 def build(bld):
-    module = bld.create_ns3_module('satellite-network', ['core', 'internet', 'applications', 'point-to-point', 'mpi', 'satellite', 'mobility', 'internet-apps', 'basic-sim'])
+    module = bld.create_ns3_module('satellite-network', ['core', 'internet', 'applications', 'point-to-point', 'mpi', 'satellite', 'mobility', 'internet-apps', 'basic-sim', 'ndnSIM'])
     module.source = [
         'model/point-to-point-laser-net-device.cc',
         'model/point-to-point-laser-channel.cc',
@@ -16,6 +16,7 @@ def build(bld):
         'model/arbiter-single-forward.cc',
         'helper/arbiter-single-forward-helper.cc',
         'helper/gsl-if-bandwidth-helper.cc',
+        'model/ndn-multicast-net-device-transport.cc',
         ]
 
     module_test = bld.create_ns3_module_test_library('satellite-network')
@@ -39,6 +40,7 @@ def build(bld):
         'model/arbiter-single-forward.h',
         'helper/arbiter-single-forward-helper.h',
         'helper/gsl-if-bandwidth-helper.h',
+        'model/ndn-multicast-net-device-transport.h',
         ]
 
     if bld.env.ENABLE_EXAMPLES:

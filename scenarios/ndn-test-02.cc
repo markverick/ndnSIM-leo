@@ -41,7 +41,8 @@
 #include "ns3/point-to-point-laser-net-device.h"
 #include "ns3/ipv4.h"
 #include "read-data.h"
-#include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
+// #include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
+#include "ns3/ndn-multicast-net-device-transport.h"
 #include "helper/ndn-leo-stack-helper.h"
 
 namespace ns3 {
@@ -368,7 +369,7 @@ void AddRouteGSL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> o
     NS_ASSERT_MSG(gsNdn != 0, "Ndn stack should be installed on the ground station node");
     shared_ptr<ns3::ndn::Face> gsFace = gsNdn->getFaceByNetDevice(gsNetDevice);
     NS_ASSERT_MSG(gsFace != 0, "There is no face associated with the gsl link");
-    ns3::ndn::NetDeviceTransport* gsTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>(gsFace->getTransport());
+    ns3::ndn::MulticastNetDeviceTransport* gsTransport = dynamic_cast<ns3::ndn::MulticastNetDeviceTransport*>(gsFace->getTransport());
     NS_ASSERT_MSG(gsTransport != 0, "There is no valid transport associated with the ground station face");
 
     Ptr<ns3::ndn::L3Protocol> satNdn = satNode->GetObject<ns3::ndn::L3Protocol>();
@@ -376,7 +377,7 @@ void AddRouteGSL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> o
     shared_ptr<ns3::ndn::Face> satFace = satNdn->getFaceByNetDevice(satNetDevice);
     NS_ASSERT_MSG(satFace != 0, "There is no face associated with the gsl link");
     // TODO: Maybe unsafe pointer, fix later
-    ns3::ndn::NetDeviceTransport* satTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>(satFace->getTransport());
+    ns3::ndn::MulticastNetDeviceTransport* satTransport = dynamic_cast<ns3::ndn::MulticastNetDeviceTransport*>(satFace->getTransport());
     NS_ASSERT_MSG(satTransport != 0, "There is no valid transport associated with the ground station face");
 
     if (node == gsNode) {
@@ -511,7 +512,7 @@ main(int argc, char* argv[])
   Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
 
   // Configuration
-  string ns3_config = "scenarios/config/NY_tokyo_test.properties";
+  string ns3_config = "scenarios/config/isl_test.properties";
   readConfig(ns3_config);
   m_satellite_network_dir = getConfigParamOrDefault("satellite_network_dir", "network_dir");
   m_satellite_network_routes_dir =  getConfigParamOrDefault("satellite_network_routes_dir", "network_dir/routes_dir");
