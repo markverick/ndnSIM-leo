@@ -12,8 +12,6 @@ def build(bld):
         'helper/gsl-helper.cc',
         'helper/point-to-point-laser-helper.cc',
         'model/topology-satellite-network.cc',
-        'model/arbiter-satnet.cc',
-        'model/arbiter-single-forward.cc',
         'helper/arbiter-single-forward-helper.cc',
         'helper/gsl-if-bandwidth-helper.cc',
         'model/ndn-multicast-net-device-transport.cc',
