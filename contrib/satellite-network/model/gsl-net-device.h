@@ -153,9 +153,6 @@ public:
   virtual void SetAddress (Address address);
   virtual Address GetAddress (void) const;
 
-  virtual void SetDstAddress (Address des_address);
-  virtual Address GetDstAddress (void) const;
-
   virtual bool SetMtu (const uint16_t mtu);
   virtual uint16_t GetMtu (void) const;
 
@@ -433,7 +430,6 @@ private:
 
   Ptr<Node> m_node;                                     //!< Node owning this NetDevice
   Mac48Address m_address;                               //!< Mac48Address of this NetDevice
-  Mac48Address m_dst_address;                               //!< Mac48Address of this next hop
   NetDevice::ReceiveCallback m_rxCallback;              //!< Receive callback
   NetDevice::PromiscReceiveCallback m_promiscCallback;  //!< Receive callback
                                                         //   (promisc data)
