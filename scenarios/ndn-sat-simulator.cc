@@ -1,6 +1,6 @@
-// ndn-simple.cpp
+// ndn-sat-simulator.cc
 
-
+#include "ndn-sat-simulator.h"
 #include <utility>
 #include <filesystem>
 #include <boost/algorithm/string.hpp>
@@ -13,7 +13,6 @@
 #include "ns3/node-container.h"
 #include "ns3/topology.h"
 #include "ns3/exp-util.h"
-#include "ns3/basic-simulation.h"
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
@@ -46,48 +45,22 @@
 
 namespace ns3 {
 
-// Input
-Ptr<BasicSimulation> m_basicSimulation;       //<! Basic simulation instance
-std::string m_satellite_network_dir;          //<! Directory containing satellite network information
-std::string m_satellite_network_routes_dir;   //<! Directory containing the routes over time of the network
-bool m_satellite_network_force_static;        //<! True to disable satellite movement and basically run
-                                              //   it static at t=0 (like a static network)
-std::string m_prefix;                         // NDN's prefix
-
-
-// Generated state
-NodeContainer m_allNodes;                           //!< All nodes
-NodeContainer m_groundStationNodes;                 //!< Ground station nodes
-NodeContainer m_satelliteNodes;                     //!< Satellite nodes
-std::vector<Ptr<GroundStation> > m_groundStations;  //!< Ground stations
-std::vector<Ptr<Satellite>> m_satellites;           //<! Satellites
-std::set<int64_t> m_endpoints;                      //<! Endpoint ids = ground station ids
-std::vector<std::tuple<double, Ptr<Node>, string, Ptr<PointToPointLaserNetDevice> > > m_pending_fib;
-
-// ISL devices
-Ipv4AddressHelper m_ipv4_helper;
-NetDeviceContainer m_islNetDevices;
-std::vector<std::pair<int32_t, int32_t>> m_islFromTo;
-std::map<std::string, std::string> m_config;
-
-// Values
-double m_isl_data_rate_megabit_per_s;
-double m_gsl_data_rate_megabit_per_s;
-int64_t m_isl_max_queue_size_pkts;
-int64_t m_gsl_max_queue_size_pkts;
-bool m_enable_isl_utilization_tracking;
-int64_t m_isl_utilization_tracking_interval_ns;
-
-std::string getConfigParamOrDefault(std::string key, std::string default_value) {
+NDNSatSimulator::NDNSatSimulator(string config) {
+    ReadConfig(config);
+}
+std::string NDNSatSimulator::getConfigParamOrDefault(std::string key, std::string default_value) {
   auto it = m_config.find(key);
   if (it != m_config.end())
     return it->second;
   return default_value;
 }
 
-void readConfig(std::string conf) {
+void NDNSatSimulator::ReadConfig(std::string conf) {
   // Read the config
   m_config = read_config(conf);
+  m_satellite_network_dir = getConfigParamOrDefault("satellite_network_dir", "network_dir");
+  m_satellite_network_routes_dir =  getConfigParamOrDefault("satellite_network_routes_dir", "network_dir/routes_dir");
+  m_satellite_network_force_static = parse_boolean(getConfigParamOrDefault("satellite_network_force_static", "false"));
 
   // Print full config
   printf("CONFIGURATION\n-----\nKEY                                       VALUE\n");
@@ -98,7 +71,7 @@ void readConfig(std::string conf) {
   printf("\n");
 }
 
-void ReadSatellites()
+void NDNSatSimulator::ReadSatellites()
 {
   // Open file
   std::ifstream fs;
@@ -163,7 +136,7 @@ void ReadSatellites()
   fs.close();
 }
 
-void ReadGroundStations()
+void NDNSatSimulator::ReadGroundStations()
 {
   // Create a new file stream to open the file
   std::ifstream fs;
@@ -213,7 +186,7 @@ void ReadGroundStations()
   // }
 }
 
-void ReadISLs()
+void NDNSatSimulator::ReadISLs()
 {
 
     // Link helper
@@ -285,7 +258,7 @@ void ReadISLs()
 }
 
 
-void AddRouteISL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> otherNode, int metric)
+void AddRouteISL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> otherNode, int metric)
 {
   for (uint32_t deviceId = 0; deviceId < node->GetNDevices(); deviceId++) {
     // if (node->GetId() < m_satelliteNodes.GetN() && otherNode->GetId() < m_satelliteNodes.GetN()) {
@@ -337,12 +310,12 @@ void AddRouteISL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> o
   // }
 }
 
-void AddRouteGSL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> otherNode, int metric)
+void AddRouteGSL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> otherNode, int metric)
 {
   ns3::Ptr<ns3::Node> gsNode;
   ns3::Ptr<ns3::Node> satNode;
   // src node is satellite
-  if (node->GetId() < m_satelliteNodes.GetN()) {
+  if (node->GetId() < otherNode->GetId()) {
     satNode = node;
     gsNode = otherNode;
   } else {
@@ -401,7 +374,7 @@ void AddRouteGSL (ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> o
   }
 }
 
-void CreateGSLs() {
+void NDNSatSimulator::AddGSLs() {
 
   // Link helper
   GSLHelper gsl_helper;
@@ -462,7 +435,7 @@ void CreateGSLs() {
 
 }
 
-void importDynamicStateSat(ns3::NodeContainer nodes, string dname) {
+void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dname) {
     // Iterate through the dynamic state directory
     for (const auto & entry : filesystem::directory_iterator(dname)) {
         // Extract nanoseconds from file name
@@ -502,8 +475,7 @@ void importDynamicStateSat(ns3::NodeContainer nodes, string dname) {
     }
 }
 
-int
-main(int argc, char* argv[])
+void NDNSatSimulator::Run()
 {
   // setting default parameters for PointToPoint links and channels
   Config::SetDefault("ns3::PointToPointNetDevice::DataRate", StringValue("1Mbps"));
@@ -512,14 +484,6 @@ main(int argc, char* argv[])
 
   // Configuration
   string ns3_config = "scenarios/config/3nodes_test.properties";
-  readConfig(ns3_config);
-  m_satellite_network_dir = getConfigParamOrDefault("satellite_network_dir", "network_dir");
-  m_satellite_network_routes_dir =  getConfigParamOrDefault("satellite_network_routes_dir", "network_dir/routes_dir");
-  m_satellite_network_force_static = parse_boolean(getConfigParamOrDefault("satellite_network_force_static", "false"));
-
-  // Read optional command-line parameters (e.g., enable visualizer with ./waf --run=<> --visualize
-  CommandLine cmd;
-  cmd.Parse(argc, argv);
 
   // Reading nodes
   
@@ -547,7 +511,7 @@ main(int argc, char* argv[])
 
   ReadISLs();
 
-  CreateGSLs();
+  AddGSLs();
   // Install NDN stack on all nodes
   ndn::LeoStackHelper ndnHelper;
   // ndnHelper.SetDefaultRoutes(true);
@@ -585,7 +549,7 @@ main(int argc, char* argv[])
 
   cout << "Setting up FIB schedules..."  << endl;
 
-  importDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
+  ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
 
   cout << "Starting the simulation"  << endl;
   Simulator::Stop(Seconds(5.0));
@@ -593,13 +557,6 @@ main(int argc, char* argv[])
   Simulator::Run();
   Simulator::Destroy();
 
-  return 0;
 }
 
 } // namespace ns3
-
-int
-main(int argc, char* argv[])
-{
-  return ns3::main(argc, argv);
-}

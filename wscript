@@ -1035,10 +1035,20 @@ def add_examples_programs(bld):
 
 def add_scenerios(bld):
     all_modules = [mod[len("ns3-"):] for mod in bld.env['NS3_ENABLED_MODULES'] + bld.env['NS3_ENABLED_CONTRIBUTED_MODULES']]
-    obj = bld.create_ns3_program('ndn', all_modules)
-    obj.source = [
-        'scenarios/ndn-test-02.cc',
-    ]
+    try:
+        test_dir = 'scenarios/test'
+        for filename in os.listdir('scenarios/test'):
+
+            f = os.path.join(test_dir, filename)
+            if os.path.isfile(f):
+                obj = bld.create_ns3_program(os.path.splitext(filename)[0], all_modules)
+                obj.source = [
+                    f,
+                    'scenarios/ndn-sat-simulator.cc'
+                ]
+    except OSError:
+        return
+
 
 def _get_all_task_gen(self):
     for group in self.groups:
