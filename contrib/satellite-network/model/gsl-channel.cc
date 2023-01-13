@@ -70,17 +70,12 @@ GSLChannel::TransmitStart (
 {
   NS_LOG_FUNCTION (this << p << src);
   NS_LOG_LOGIC ("UID is " << p->GetUid () << ")");
+
   Mac48Address address48 = Mac48Address::ConvertFrom (dst_address);
-  // for (auto it = m_link.begin(); it != m_link.end(); it++) {
-  //   std::cout << it->first << ": " << it->second << std::endl;
-  // }
   MacToNetDeviceI it = m_link.find (address48);
   if (it != m_link.end ()) {
     Ptr<GSLNetDevice> dst = it->second;
-    // std::cout << src->GetAddress() << " -> " << address48 << std::endl;
-    // std::cout << "GSL: " << src->GetNode()->GetId() << " -> " << dst->GetNode()->GetId() << std::endl;
     bool sameSystem = (src->GetNode()->GetSystemId() == dst->GetNode()->GetSystemId());
-    // std::cout << src << ", " << dst_address << ", " << it->second << std::endl;
     return TransmitTo(p, src, it->second, txTime, sameSystem);
   }
 
@@ -90,6 +85,7 @@ GSLChannel::TransmitStart (
 
 bool
 GSLChannel::TransmitTo(Ptr<const Packet> p, Ptr<GSLNetDevice> srcNetDevice, Ptr<GSLNetDevice> destNetDevice, Time txTime, bool isSameSystem) {
+
   // Mobility models for source and destination
   Ptr<MobilityModel> senderMobility = srcNetDevice->GetNode()->GetObject<MobilityModel>();
   Ptr<Node> receiverNode = destNetDevice->GetNode();
