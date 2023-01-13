@@ -1,135 +1,46 @@
-Note:
-This is a custom and unsupported fork of NS-3 simulator with ndnSIM module and satellite modules (https://github.com/named-data-ndnSIM/ns-3-dev)
-`src/network/utils/sgi-hashmap.h` is reintroduced for backward compatability with newer ns-3 for satellite modules
-ndnSIM module is added directly as a submodule
-To run: `NS_LOG=ndn.Consumer:ndn.Producer ./waf --run=ndn-leo`
-external modules was copied over from Hypatia (https://github.com/snkas/hypatia)
-
-**The code in this repository is frequently rebased on top of the latest ns-3-dev branch** 
-
-
-The Network Simulator, Version 3
+The Network Simulator of LEO satellite with NDN stack
 ================================
 
-## Table of Contents:
+## Overview
+The goal of is to simulate of the NDN traffic on LEO satelliete with accurate delays and mobility. The core simulation is based on the modified ndnSIM version of ns-3 (https://github.com/named-data-ndnSIM/ns-3-dev & https://github.com/named-data-ndnSIM/ndnSIM), and the satellite topology, net devices, and channels are taken from Hypatia (https://github.com/snkas/hypatia). However, putting ndnSIM's and Hypatia's component together does not simply work because:
+1) Both act as modules of different version of ndnSIM. A number of patches are needed for the incompatability.
+2) Default NDN Stack (NFD, ndn-cxx, and additional ns-3 functionality) of ndnSIM do not support the nature of satellite topology.
 
-1) [An overview](#an-open-source-project)
-2) [Building ns-3](#building-ns-3)
-3) [Running ns-3](#running-ns-3)
-4) [Getting access to the ns-3 documentation](#getting-access-to-the-ns-3-documentation)
-5) [Working with the development version of ns-3](#working-with-the-development-version-of-ns-3)
+Our approach is to identify the common ground, extract the reusable pieces of the codes, and implement the bridge between the two.
 
-Note:  Much more substantial information about ns-3 can be found at
-https://www.nsnam.org
+## Breif Specification of the Topology
+1) There are two types of nodes: Satellite and Ground Station.
+2) There are two types of links: GSL (Ground Station <-> Satellite) and ISL (Satellite <-> Satellite).
+3) GSL link is assumed to be broadcast due to the poor performance of laser from LEO orbit to the ground.
+4) ISL link is assumed to be point to point laser.
+5) Each Satellite node has five net devices: one GSL and four ISLs. This is a default value that can be changed.
+6) Each Ground Station has one net device: one GSL
+7) Each ISL channel connects between two Satellite's ISL net devices
+8) There is only one GSL channel that connects all Satellite's GSL net devices and Ground Station's GSL net devices.
+9) Mobility model is calculated by the distance of the current position and the speed of light for both GSL and ISL.
 
-## An Open Source project
+## NDN Stack and Faces
+1) Instead of IP Interface, NDN has Faces
+2) Each Face is composed of two components: upper-level Link Service and lower-level Transport
+3) Link Service (in this case, generic-link-service) takes care of congestion control, packet encoding, managing transmission queue, etc.
+4) Transport (in this case, ndn-multicast-net-device-transport) brings the packet to the other end of the net device. Transport is created from a net device
+5) The forwarding component (e.g. FIB table) forwards the name to the Face. The Transport layer of that Face will send the packet to the assigned net device.
+6) For point-to-point ISL channel, implementation of a custom Transport is not needed since ndnSIM's FibHelper already supports that. For GSL channel, the implementation can be tricky because unlike IP, Transport only knows the "name". Sending Interest forward and receiving Data back complicates the decision of the Transport. 
 
-ns-3 is a free open source project aiming to build a discrete-event
-network simulator targeted for simulation research and education.
-This is a collaborative project; we hope that
-the missing pieces of the models we have not yet implemented
-will be contributed by the community in an open collaboration
-process.
+## Modifications/Adoptions of Hypatia's code:
+1) Remove the IP-related components (e.g. Arbiter, ARP Cache, and other IP congestion controls). `basic-sim` module is still used for utility functions (e.g. exp-util.cc).
+2) Fully adopt GSL and ISL channels.
+3) Need a small patch for GSL and ISL net devices such as adding NDN protocol number.
+4) Adopt most of the import functions, including forwarding state and topology data.
 
-The process of contributing to the ns-3 project varies with
-the people involved, the amount of time they can invest
-and the type of model they want to work on, but the current
-process that the project tries to follow is described here:
-https://www.nsnam.org/developers/contributing-code/
+## Changes to the base ns-3 code
+1) Install and fix missing dependencies caused by different version of external modules and ns-3.
+2) Implement a custom Transport to support GSL multicast.
+3) Implement a custom NDN StackHelper class to support different types of net devices and channels.
+4) Apply the Hypatia's mobility model to the NDN Stack for calculating delays.
+5) Extends some of the NFD and ndnSIM components to add functionalities for satellite topology.
+6) Internal modules are never touched except for compatability issues.
 
-This README excerpts some details from a more extensive
-tutorial that is maintained at:
-https://www.nsnam.org/documentation/latest/
 
-## Building ns-3
 
-The code for the framework and the default models provided
-by ns-3 is built as a set of libraries. User simulations
-are expected to be written as simple programs that make
-use of these ns-3 libraries.
 
-To build the set of default libraries and the example
-programs included in this package, you need to use the
-tool 'waf'. Detailed information on how to use waf is
-included in the file doc/build.txt
-
-However, the real quick and dirty way to get started is to
-type the command
-```shell
-./waf configure --enable-examples
-```
-
-followed by
-
-```shell
-./waf
-```
-
-in the directory which contains this README file. The files
-built will be copied in the build/ directory.
-
-The current codebase is expected to build and run on the
-set of platforms listed in the [release notes](RELEASE_NOTES)
-file.
-
-Other platforms may or may not work: we welcome patches to
-improve the portability of the code to these other platforms.
-
-## Running ns-3
-
-On recent Linux systems, once you have built ns-3 (with examples
-enabled), it should be easy to run the sample programs with the
-following command, such as:
-
-```shell
-./waf --run simple-global-routing
-```
-
-That program should generate a `simple-global-routing.tr` text
-trace file and a set of `simple-global-routing-xx-xx.pcap` binary
-pcap trace files, which can be read by `tcpdump -tt -r filename.pcap`
-The program source can be found in the examples/routing directory.
-
-## Getting access to the ns-3 documentation
-
-Once you have verified that your build of ns-3 works by running
-the simple-point-to-point example as outlined in 3) above, it is
-quite likely that you will want to get started on reading
-some ns-3 documentation.
-
-All of that documentation should always be available from
-the ns-3 website: https://www.nsnam.org/documentation/.
-
-This documentation includes:
-
-  - a tutorial
-
-  - a reference manual
-
-  - models in the ns-3 model library
-
-  - a wiki for user-contributed tips: https://www.nsnam.org/wiki/
-
-  - API documentation generated using doxygen: this is
-    a reference manual, most likely not very well suited
-    as introductory text:
-    https://www.nsnam.org/doxygen/index.html
-
-## Working with the development version of ns-3
-
-If you want to download and use the development version of ns-3, you
-need to use the tool `git`. A quick and dirty cheat sheet is included
-in the manual, but reading through the git
-tutorials found in the Internet is usually a good idea if you are not
-familiar with it.
-
-If you have successfully installed git, you can get
-a copy of the development version with the following command:
-```shell
-git clone https://gitlab.com/nsnam/ns-3-dev.git
-```
-
-However, we recommend to follow the Gitlab guidelines for starters,
-that includes creating a Gitlab account, forking the ns-3-dev project
-under the new account's name, and then cloning the forked repository.
-You can find more information in the [manual](https://www.nsnam.org/docs/manual/html/working-with-git.html).
