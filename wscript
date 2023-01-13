@@ -1035,34 +1035,9 @@ def add_examples_programs(bld):
 
 def add_scenerios(bld):
     all_modules = [mod[len("ns3-"):] for mod in bld.env['NS3_ENABLED_MODULES'] + bld.env['NS3_ENABLED_CONTRIBUTED_MODULES']]
-    obj = bld.create_ns3_program('ndn-1', all_modules)
-    obj.source = [
-        'scenarios/ndn-test.cc',
-        'scenarios/read-data.cc',
-        'scenarios/model/ground-station.cc',
-        'scenarios/model/tle.cc',
-        'scenarios/model/topo.cc'
-    ]
-    # obj = bld.create_ns3_program('ndn-2', all_modules)
-    # obj.source = [
-    #     'scenarios/ndn-leo.cc',
-    #     'scenarios/model/point-to-point-sat-channel.cc',
-    #     'scenarios/model/point-to-point-sat-remote-channel.cc',
-    #     'scenarios/model/point-to-point-sat-net-device.cc',
-    #     'scenarios/helper/point-to-point-sat-helper.cc',
-    #     'scenarios/read-data.cc',
-    #     'scenarios/model/ground-station.cc',
-    #     'scenarios/model/tle.cc',
-    #     'scenarios/model/topo.cc'
-    # ]
-    obj = bld.create_ns3_program('ndn-2', all_modules)
+    obj = bld.create_ns3_program('ndn', all_modules)
     obj.source = [
         'scenarios/ndn-test-02.cc',
-        'scenarios/read-data.cc',
-        'scenarios/model/ground-station.cc',
-        'scenarios/model/tle.cc',
-        'scenarios/model/topo.cc',
-        'scenarios/helper/ndn-leo-stack-helper.cc',
     ]
 
 def _get_all_task_gen(self):

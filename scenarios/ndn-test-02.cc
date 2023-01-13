@@ -40,10 +40,9 @@
 #include "ns3/wifi-net-device.h"
 #include "ns3/point-to-point-laser-net-device.h"
 #include "ns3/ipv4.h"
-#include "read-data.h"
 // #include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
 #include "ns3/ndn-multicast-net-device-transport.h"
-#include "helper/ndn-leo-stack-helper.h"
+#include "ns3/ndn-leo-stack-helper.h"
 
 namespace ns3 {
 
@@ -512,7 +511,7 @@ main(int argc, char* argv[])
   Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
 
   // Configuration
-  string ns3_config = "scenarios/config/NY_tokyo_test.properties";
+  string ns3_config = "scenarios/config/3nodes_test.properties";
   readConfig(ns3_config);
   m_satellite_network_dir = getConfigParamOrDefault("satellite_network_dir", "network_dir");
   m_satellite_network_routes_dir =  getConfigParamOrDefault("satellite_network_routes_dir", "network_dir/routes_dir");
