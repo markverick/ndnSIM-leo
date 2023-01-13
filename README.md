@@ -1,10 +1,10 @@
 The Network Simulator of the LEO satellite with NDN stack
 ================================
 ## Overview
-The goal is to simulate the NDN traffic on LEO satellites with accurate delays and mobility. The core simulation is based on the modified ndnSIM version of ns-3 (https://github.com/named-data-ndnSIM/ns-3-dev & https://github.com/named-data-ndnSIM/ndnSIM). The satellite topology, net devices, and channels are taken from Hypatia (https://github.com/snkas/hypatia). However, putting ndnSIM's and Hypatia's components together does not simply work because:
+The goal is to simulate the NDN traffic on LEO satellites with accurate delays and mobility. The core simulation is based on the modified ndnSIM version of ns-3 (https://github.com/named-data-ndnSIM/ns-3-dev & https://github.com/named-data-ndnSIM/ndnSIM). The satellite topology, net devices, and channels are taken from Hypatia (https://github.com/snkas/hypatia). However, putting ndnSIM's and Hypatia's components together needs a bit more work because:
 
-Both act as modules of different versions of ndnSIM. Several patches are needed for compatibility.
-The ndnSIM implementation of NFD and ndn-cxx do not support the nature of satellite topology.
+1) Both act as modules of different versions of ndnSIM. Several patches are needed for compatibility.
+2) The ndnSIM implementation of NFD and ndn-cxx do not support the nature of satellite topology.
 Our approach is to identify the common ground, extract the reusable pieces of the codes, and implement the bridge between the two.
 
 ## Brief Specification of the Topology
