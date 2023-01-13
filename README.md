@@ -1,9 +1,10 @@
 The Network Simulator of the LEO satellite with NDN stack
 ================================
 ## Overview
-The goal is to simulate the NDN traffic on LEO satellites with accurate delays and mobility. The core simulation is based on the modified ndnSIM version of ns-3 (https://github.com/named-data-ndnSIM/ns-3-dev & https://github.com/named-data-ndnSIM/ndnSIM), and the satellite topology, net devices, and channels are taken from Hypatia (https://github.com/snkas/hypatia). However, putting ndnSIM's and Hypatia's components together does not simply work because:
+The goal is to simulate the NDN traffic on LEO satellites with accurate delays and mobility. The core simulation is based on the modified ndnSIM version of ns-3 (https://github.com/named-data-ndnSIM/ns-3-dev & https://github.com/named-data-ndnSIM/ndnSIM). The satellite topology, net devices, and channels are taken from Hypatia (https://github.com/snkas/hypatia). However, putting ndnSIM's and Hypatia's components together does not simply work because:
+
 Both act as modules of different versions of ndnSIM. Several patches are needed for compatibility.
-The Default NDN Stack (NFD, ndn-cxx, and additional ns-3 functionality) of ndnSIM do not support the nature of satellite topology.
+The ndnSIM implementation of NFD and ndn-cxx do not support the nature of satellite topology.
 Our approach is to identify the common ground, extract the reusable pieces of the codes, and implement the bridge between the two.
 
 ## Brief Specification of the Topology
@@ -23,7 +24,7 @@ Our approach is to identify the common ground, extract the reusable pieces of th
 3) Link Service (in this case, generic-link-service) handles congestion control, packet encoding, managing transmission queue, etc.
 4) Transport (in this case, ndn-multicast-net-device-transport) brings the packet to the other end of the net device. Transport is created from a net device.
 5) The forwarding component (e.g., FIB table) forwards the name to the Face. The Transport layer of that Face will send the packet to the assigned net device.
-6) Implementing a custom Transport is unnecessary for ISL channels since ndnSIM's FibHelper helps connect two nodes on a point-to-point channel. For the GSL channel, the implementation can be tricky because, unlike IP, Transport only knows the "name." Sending Interest forward and receiving Data back complicates the decision of the Transport.
+6) Implementing a custom Transport is unnecessary for ISL channels since ndnSIM's FibHelper helps connect two nodes on a point-to-point channel. For the GSL channel, the implementation can be tricky because, unlike IP, Transport only knows the "name." Sending Interest forward and receiving Data back complicates the decision of the Transport. Our solution is using Ad-hoc mode with a data structure that stores the addresses of the multicast members.
 
 ## Modifications/Adoptions of Hypatia's code:
 1) Remove the IP-related components (e.g., Arbiter, ARP Cache, and other IP congestion controls). Basic-sim module is still used for utility functions (e.g., exp-util.cc).
