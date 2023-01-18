@@ -51,6 +51,9 @@ public:
   AddBroadcastAddress(Address address);
 
   void
+  SetBroadcastAddress(Address address);
+
+  void
   RemoveBroadcastAddress(Address address);
 
 private:

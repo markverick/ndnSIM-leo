@@ -356,7 +356,7 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> ot
       // gs -> sat
       ns3::ndn::FibHelper::AddRoute(node, prefix, gsFace, metric);
       gsTransport->AddBroadcastAddress(satNetDevice->GetAddress());
-      satTransport->AddBroadcastAddress(gsNetDevice->GetAddress());
+      satTransport->SetBroadcastAddress(gsNetDevice->GetAddress());
       // netDeviceGS->SetDstAddress(netDevice->GetAddress());
     } else {
       // sat -> gs
@@ -365,7 +365,7 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> ot
       ns3::ndn::FibHelper::AddRoute(node, prefix, satFace, metric);
       // cout << "ADD BROADCAST: " << satNetDevice->GetAddress() << ", " << gsNetDevice->GetAddress() << endl;
       gsTransport->AddBroadcastAddress(satNetDevice->GetAddress());
-      satTransport->AddBroadcastAddress(gsNetDevice->GetAddress());
+      satTransport->SetBroadcastAddress(gsNetDevice->GetAddress());
       // netDevice->SetDstAddress(netDeviceGS->GetAddress());
     }
 

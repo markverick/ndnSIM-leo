@@ -71,6 +71,13 @@ MulticastNetDeviceTransport::AddBroadcastAddress(Address address) {
   m_broadcastAddresses.insert(address);
 }
 
+// TODO: Make the GetBroadcast = true and use that instead of high overhead set
+void
+MulticastNetDeviceTransport::SetBroadcastAddress(Address address) {
+  m_broadcastAddresses.clear();
+  m_broadcastAddresses.insert(address);
+}
+
 void
 MulticastNetDeviceTransport::RemoveBroadcastAddress(Address address) {
   if (m_broadcastAddresses.find(address) != m_broadcastAddresses.end()) {
