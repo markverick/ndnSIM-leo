@@ -101,6 +101,8 @@ private:
   int64_t m_gsl_max_queue_size_pkts;
   bool m_enable_isl_utilization_tracking;
   int64_t m_isl_utilization_tracking_interval_ns;
+  int64_t m_node1_id;
+  int64_t m_node2_id;
 
 };
 

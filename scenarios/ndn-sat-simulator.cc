@@ -1,6 +1,4 @@
 // ndn-sat-simulator.cc
-
-#include "ndn-sat-simulator.h"
 #include <utility>
 #include <filesystem>
 #include <boost/algorithm/string.hpp>
@@ -42,6 +40,7 @@
 // #include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
 #include "ns3/ndn-multicast-net-device-transport.h"
 #include "ns3/ndn-leo-stack-helper.h"
+#include "ndn-sat-simulator.h"
 
 namespace ns3 {
 
@@ -61,6 +60,8 @@ void NDNSatSimulator::ReadConfig(std::string conf) {
   m_satellite_network_dir = getConfigParamOrDefault("satellite_network_dir", "network_dir");
   m_satellite_network_routes_dir =  getConfigParamOrDefault("satellite_network_routes_dir", "network_dir/routes_dir");
   m_satellite_network_force_static = parse_boolean(getConfigParamOrDefault("satellite_network_force_static", "false"));
+  m_node1_id = stoi(getConfigParamOrDefault("consumer_id", "0"));
+  m_node2_id = stoi(getConfigParamOrDefault("producer_id", "0"));
 
   // Print full config
   printf("CONFIGURATION\n-----\nKEY                                       VALUE\n");
@@ -310,7 +311,7 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> ot
   // }
 }
 
-void AddRouteGSL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> otherNode, int metric)
+void AddRouteGSL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> otherNode, int metric, bool isDest)
 {
   ns3::Ptr<ns3::Node> gsNode;
   ns3::Ptr<ns3::Node> satNode;
@@ -351,12 +352,13 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> ot
     // TODO: Maybe unsafe pointer, fix later
     ns3::ndn::MulticastNetDeviceTransport* satTransport = dynamic_cast<ns3::ndn::MulticastNetDeviceTransport*>(satFace->getTransport());
     NS_ASSERT_MSG(satTransport != 0, "There is no valid transport associated with the ground station face");
-
     if (node == gsNode) {
       // gs -> sat
       ns3::ndn::FibHelper::AddRoute(node, prefix, gsFace, metric);
-      gsTransport->AddBroadcastAddress(satNetDevice->GetAddress());
-      satTransport->SetBroadcastAddress(gsNetDevice->GetAddress());
+      if (isDest) {
+        gsTransport->SetBroadcastAddress(satNetDevice->GetAddress());
+      }
+      satTransport->AddBroadcastAddress(gsNetDevice->GetAddress());
       // netDeviceGS->SetDstAddress(netDevice->GetAddress());
     } else {
       // sat -> gs
@@ -364,8 +366,10 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> ot
       // cout << "SAT->GS: " << deviceId << "," << satNetDevice->GetAddress() << " -> " << gsNetDevice->GetAddress() << endl;
       ns3::ndn::FibHelper::AddRoute(node, prefix, satFace, metric);
       // cout << "ADD BROADCAST: " << satNetDevice->GetAddress() << ", " << gsNetDevice->GetAddress() << endl;
-      gsTransport->AddBroadcastAddress(satNetDevice->GetAddress());
-      satTransport->SetBroadcastAddress(gsNetDevice->GetAddress());
+      if (isDest) {
+        gsTransport->SetBroadcastAddress(satNetDevice->GetAddress());
+      }
+      satTransport->AddBroadcastAddress(gsNetDevice->GetAddress());
       // netDevice->SetDstAddress(netDeviceGS->GetAddress());
     }
 
@@ -446,10 +450,10 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
         double ms = stod(match[1]) / 1000000;
 
         // Add RemoveRoute schedule by emptying temporary set
-        int current_node;
+        int64_t current_node;
         // int destination_node;
         string prefix;
-        int next_hop;
+        int64_t next_hop;
 
         // Read each file
         ifstream input(full_path);
@@ -463,11 +467,11 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
             next_hop = stoi(result[2]);
             // Add AddRoute schedule
             prefix = "prefix/uid-" + result[1];
-  
-            if (current_node >= m_satelliteNodes.GetN()) {
-              ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node), prefix, nodes.Get(next_hop), 1);
-            } else if(next_hop >= m_satelliteNodes.GetN()) {
-              ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node), prefix, nodes.Get(next_hop), 1);
+
+            bool isDest = prefix == m_prefix;
+            if (current_node >= m_satelliteNodes.GetN() || next_hop >= m_satelliteNodes.GetN()) {
+              ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node),
+                                       prefix, nodes.Get(next_hop), 1, isDest);
             } else {
               ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteISL, nodes.Get(current_node), prefix, nodes.Get(next_hop), 1);
             }
@@ -525,19 +529,18 @@ void NDNSatSimulator::Run()
 
   // Installing applications
   std::string prefix = "prefix/uid-";
-  int node1_id = stoi(getConfigParamOrDefault("consumer_id", "0"));
-  int node2_id = stoi(getConfigParamOrDefault("producer_id", "0"));
-  Ptr<Node> node1 = m_allNodes.Get(node1_id);
-  Ptr<Node> node2 = m_allNodes.Get(node2_id);
-  std::string prefix1 = prefix + to_string(node1_id);
-  std::string prefix2 = prefix + to_string(node2_id);
+  Ptr<Node> node1 = m_allNodes.Get(m_node1_id);
+  Ptr<Node> node2 = m_allNodes.Get(m_node2_id);
+  std::string prefix1 = prefix + to_string(m_node1_id);
+  std::string prefix2 = prefix + to_string(m_node2_id);
   m_prefix = prefix2;
   // cout << "PREFIX: " << prefix2 << endl;
   // Consumer
   ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
   // Consumer will request /prefix/0, /prefix/1, ...
+
   consumerHelper.SetPrefix(m_prefix);
-  consumerHelper.SetAttribute("Frequency", StringValue("2")); // 10 interests a second
+  consumerHelper.SetAttribute("Frequency", StringValue("1")); // 10 interests a second
   consumerHelper.Install(node1); // first node
 
   // Producer
