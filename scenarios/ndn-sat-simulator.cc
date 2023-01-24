@@ -356,9 +356,11 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> ot
       // gs -> sat
       ns3::ndn::FibHelper::AddRoute(node, prefix, gsFace, metric);
       if (isDest) {
-        gsTransport->SetBroadcastAddress(satNetDevice->GetAddress());
+        // gsTransport->SetBroadcastAddress(satNetDevice->GetAddress());
+        gsTransport->SetInterestDest(satNetDevice->GetAddress());
+        satTransport->SetDataDest(gsNetDevice->GetAddress());
       }
-      satTransport->AddBroadcastAddress(gsNetDevice->GetAddress());
+      // satTransport->AddBroadcastAddress(gsNetDevice->GetAddress());
       // netDeviceGS->SetDstAddress(netDevice->GetAddress());
     } else {
       // sat -> gs
@@ -367,9 +369,11 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> ot
       ns3::ndn::FibHelper::AddRoute(node, prefix, satFace, metric);
       // cout << "ADD BROADCAST: " << satNetDevice->GetAddress() << ", " << gsNetDevice->GetAddress() << endl;
       if (isDest) {
-        gsTransport->SetBroadcastAddress(satNetDevice->GetAddress());
+        // gsTransport->SetBroadcastAddress(satNetDevice->GetAddress());
+        gsTransport->SetDataDest(satNetDevice->GetAddress());
+        satTransport->SetInterestDest(gsNetDevice->GetAddress());
       }
-      satTransport->AddBroadcastAddress(gsNetDevice->GetAddress());
+      // satTransport->AddBroadcastAddress(gsNetDevice->GetAddress());
       // netDevice->SetDstAddress(netDeviceGS->GetAddress());
     }
 
@@ -540,7 +544,7 @@ void NDNSatSimulator::Run()
   // Consumer will request /prefix/0, /prefix/1, ...
 
   consumerHelper.SetPrefix(m_prefix);
-  consumerHelper.SetAttribute("Frequency", StringValue("1")); // 10 interests a second
+  consumerHelper.SetAttribute("Frequency", StringValue("2")); // 2 interests a second
   consumerHelper.Install(node1); // first node
 
   // Producer
@@ -555,7 +559,7 @@ void NDNSatSimulator::Run()
   ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
 
   cout << "Starting the simulation"  << endl;
-  Simulator::Stop(Seconds(5.0));
+  Simulator::Stop(Seconds(2.5));
 
   Simulator::Run();
   Simulator::Destroy();

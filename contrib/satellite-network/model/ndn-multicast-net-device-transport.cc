@@ -25,8 +25,10 @@
 #include "ns3/ndnSIM/utils/ndn-ns3-packet-tag.hpp"
 
 #include <ndn-cxx/encoding/block.hpp>
+#include <ndn-cxx/encoding/tlv.hpp>
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/data.hpp>
+#include <ndn-cxx/lp/packet.hpp>
 
 #include "ns3/queue.h"
 
@@ -35,15 +37,30 @@ NS_LOG_COMPONENT_DEFINE("ndn.MulticastNetDeviceTransport");
 namespace ns3 {
 namespace ndn {
 
+uint32_t getTLVTypeFromBlockHeader(BlockHeader header) {
+  namespace tlv = ::ndn::tlv;
+  namespace lp = ::ndn::lp;
+  ::ndn::Buffer::const_iterator first, last;
+  lp::Packet p(header.getBlock());
+  std::tie(first, last) = p.get<lp::FragmentField>(0);
+  try {
+    Block fragmentBlock(::ndn::make_span(&*first, std::distance(first, last)));
+    return fragmentBlock.type();
+  }
+  catch (const tlv::Error& error) {
+    std::cout << "Non-TLV bytes (size: " << std::distance(first, last) << ")";
+    return 0;
+  }
+}
 void
 MulticastNetDeviceTransport::doSend(const Block& packet)
 {
   NS_LOG_FUNCTION(this << "Sending packet from netDevice with URI"
                   << this->getLocalUri());
 
+
   // convert NFD packet to NS3 packet
   BlockHeader header(packet);
-
   Ptr<ns3::Packet> ns3Packet = Create<ns3::Packet>();
   ns3Packet->AddHeader(header);
 
@@ -57,18 +74,39 @@ MulticastNetDeviceTransport::doSend(const Block& packet)
     netDevice->Send(ns3Packet, netDevice->GetBroadcast(),
                       L3Protocol::ETHERNET_FRAME_TYPE);
   } else {
-    for (auto address : m_broadcastAddresses) {
-      // std::cout << address << std::endl;
-      Ptr<ns3::Packet> p = ns3Packet->Copy();
-      netDevice->Send(p, address,
-                        L3Protocol::ETHERNET_FRAME_TYPE);
+    uint32_t tlv_type = getTLVTypeFromBlockHeader(header);
+    if (tlv_type == ::ndn::tlv::Interest) {
+      netDevice->Send(ns3Packet, m_interest_dest,
+                      L3Protocol::ETHERNET_FRAME_TYPE);
     }
+    else if (tlv_type == ::ndn::tlv::Data) {
+      netDevice->Send(ns3Packet, m_data_dest,
+                      L3Protocol::ETHERNET_FRAME_TYPE);
+    } else {
+      std::cout << "UNKNOWN TLV TYPE: " << tlv_type << std::endl; 
+    }
+    // for (auto address : m_broadcastAddresses) {
+    //   // std::cout << address << std::endl;
+    //   Ptr<ns3::Packet> p = ns3Packet->Copy();
+    //   netDevice->Send(p, address,
+    //                     L3Protocol::ETHERNET_FRAME_TYPE);
+    // }
   }
 }
 
 void
 MulticastNetDeviceTransport::AddBroadcastAddress(Address address) {
   m_broadcastAddresses.insert(address);
+}
+
+void
+MulticastNetDeviceTransport::SetInterestDest(Address address) {
+  m_interest_dest = address;
+}
+
+void
+MulticastNetDeviceTransport::SetDataDest(Address address) {
+  m_data_dest = address;
 }
 
 // TODO: Make the GetBroadcast = true and use that instead of high overhead set

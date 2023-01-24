@@ -48,6 +48,12 @@ public:
   using NetDeviceTransport::NetDeviceTransport;
 
   void
+  SetInterestDest(Address address);
+
+  void
+  SetDataDest(Address address);
+  
+  void
   AddBroadcastAddress(Address address);
 
   void
@@ -61,6 +67,9 @@ private:
   doSend(const Block& packet) override;
 
   std::set<Address> m_broadcastAddresses;
+
+  Address m_interest_dest;
+  Address m_data_dest;
 };
 
 } // namespace ndn
