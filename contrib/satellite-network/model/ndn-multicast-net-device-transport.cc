@@ -37,7 +37,7 @@ NS_LOG_COMPONENT_DEFINE("ndn.MulticastNetDeviceTransport");
 namespace ns3 {
 namespace ndn {
 
-uint32_t getTLVTypeFromBlockHeader(BlockHeader header) {
+Block stripBlockHeader(BlockHeader header) {
   namespace tlv = ::ndn::tlv;
   namespace lp = ::ndn::lp;
   ::ndn::Buffer::const_iterator first, last;
@@ -45,11 +45,11 @@ uint32_t getTLVTypeFromBlockHeader(BlockHeader header) {
   std::tie(first, last) = p.get<lp::FragmentField>(0);
   try {
     Block fragmentBlock(::ndn::make_span(&*first, std::distance(first, last)));
-    return fragmentBlock.type();
+    return fragmentBlock;
   }
   catch (const tlv::Error& error) {
     std::cout << "Non-TLV bytes (size: " << std::distance(first, last) << ")";
-    return 0;
+    return header.getBlock();
   }
 }
 void
@@ -74,14 +74,29 @@ MulticastNetDeviceTransport::doSend(const Block& packet)
     netDevice->Send(ns3Packet, netDevice->GetBroadcast(),
                       L3Protocol::ETHERNET_FRAME_TYPE);
   } else {
-    uint32_t tlv_type = getTLVTypeFromBlockHeader(header);
+    Block block = stripBlockHeader(header);
+    uint32_t tlv_type = block.type();
     if (tlv_type == ::ndn::tlv::Interest) {
-      netDevice->Send(ns3Packet, m_interest_dest,
-                      L3Protocol::ETHERNET_FRAME_TYPE);
+      Interest i(block);
+      // Removing appended sequence number 
+      std::string prefix = i.getName().getPrefix(-1).toUri();
+      // std::cout << "Interest Prefix: "<< prefix << std::endl;
+      // for (auto it = m_next_interest_hop.begin(); it != m_next_interest_hop.end(); it++) {
+      //   std::cout << "  From prefix: " << it->first << std::endl;
+      // }
+      if (m_next_interest_hop.find(prefix) != m_next_interest_hop.end()) {
+        netDevice->Send(ns3Packet, m_next_interest_hop[prefix],
+                        L3Protocol::ETHERNET_FRAME_TYPE);
+      }
     }
     else if (tlv_type == ::ndn::tlv::Data) {
-      netDevice->Send(ns3Packet, m_data_dest,
-                      L3Protocol::ETHERNET_FRAME_TYPE);
+      Data d(block);
+      std::string prefix = d.getName().getPrefix(-1).toUri();
+      // std::cout << "Data Prefix: "<< prefix << std::endl;
+      if (m_next_data_hop.find(prefix) != m_next_data_hop.end()) {
+        netDevice->Send(ns3Packet, m_next_data_hop[prefix],
+                        L3Protocol::ETHERNET_FRAME_TYPE);
+      }
     } else {
       std::cout << "UNKNOWN TLV TYPE: " << tlv_type << std::endl; 
     }
@@ -95,32 +110,13 @@ MulticastNetDeviceTransport::doSend(const Block& packet)
 }
 
 void
-MulticastNetDeviceTransport::AddBroadcastAddress(Address address) {
-  m_broadcastAddresses.insert(address);
+MulticastNetDeviceTransport::SetNextInterestHop(std::string prefix, Address dest) {
+  m_next_interest_hop[prefix] = dest;
 }
 
 void
-MulticastNetDeviceTransport::SetInterestDest(Address address) {
-  m_interest_dest = address;
-}
-
-void
-MulticastNetDeviceTransport::SetDataDest(Address address) {
-  m_data_dest = address;
-}
-
-// TODO: Make the GetBroadcast = true and use that instead of high overhead set
-void
-MulticastNetDeviceTransport::SetBroadcastAddress(Address address) {
-  m_broadcastAddresses.clear();
-  m_broadcastAddresses.insert(address);
-}
-
-void
-MulticastNetDeviceTransport::RemoveBroadcastAddress(Address address) {
-  if (m_broadcastAddresses.find(address) != m_broadcastAddresses.end()) {
-    m_broadcastAddresses.erase(address);
-  }
+MulticastNetDeviceTransport::SetNextDataHop(std::string prefix, Address dest) {
+  m_next_data_hop[prefix] = dest;
 }
 
 } // namespace ndn

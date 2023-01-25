@@ -48,28 +48,18 @@ public:
   using NetDeviceTransport::NetDeviceTransport;
 
   void
-  SetInterestDest(Address address);
+  SetNextInterestHop(std::string prefix, Address dest);
 
   void
-  SetDataDest(Address address);
-  
-  void
-  AddBroadcastAddress(Address address);
-
-  void
-  SetBroadcastAddress(Address address);
-
-  void
-  RemoveBroadcastAddress(Address address);
+  SetNextDataHop(std::string prefix, Address dest);
 
 private:
   virtual void
   doSend(const Block& packet) override;
 
-  std::set<Address> m_broadcastAddresses;
-
-  Address m_interest_dest;
-  Address m_data_dest;
+  std::map<std::string, Address> m_next_interest_hop;
+  std::map<std::string, Address> m_next_data_hop;
+  
 };
 
 } // namespace ndn
