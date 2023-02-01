@@ -258,7 +258,7 @@ LeoStackHelper::DefaultNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
 
   auto linkService = make_unique<::nfd::face::GenericLinkService>(opts);
 
-  auto transport = make_unique<MulticastNetDeviceTransport>(node, netDevice,
+  auto transport = make_unique<NetDeviceTransport>(node, netDevice,
                                                    constructFaceUri(netDevice),
                                                    "netdev://[ff:ff:ff:ff:ff:ff]");
 
@@ -297,7 +297,7 @@ LeoStackHelper::PointToPointNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> nd
 
   auto linkService = make_unique<::nfd::face::GenericLinkService>(opts);
 
-  auto transport = make_unique<MulticastNetDeviceTransport>(node, netDevice,
+  auto transport = make_unique<NetDeviceTransport>(node, netDevice,
                                                    constructFaceUri(netDevice),
                                                    constructFaceUri(remoteNetDevice));
 
@@ -336,7 +336,7 @@ LeoStackHelper::PointToPointLaserNetDeviceCallback(Ptr<Node> node, Ptr<L3Protoco
 
   auto linkService = make_unique<::nfd::face::GenericLinkService>(opts);
 
-  auto transport = make_unique<MulticastNetDeviceTransport>(node, netDevice,
+  auto transport = make_unique<NetDeviceTransport>(node, netDevice,
                                                    constructFaceUri(netDevice),
                                                    constructFaceUri(remoteNetDevice));
 
@@ -372,7 +372,7 @@ LeoStackHelper::GSLNetDeviceCallback(Ptr<Node> node, Ptr<L3Protocol> ndn,
 
   auto linkService = make_unique<::nfd::face::GenericLinkService>(opts);
 
-  auto transport = make_unique<MulticastNetDeviceTransport>(node, netDevice,
+  auto transport = make_unique<NetDeviceTransport>(node, netDevice,
                                                    constructFaceUri(netDevice),
                                                    constructFaceUri(netDevice),
                                                    ::ndn::nfd::FACE_SCOPE_NON_LOCAL,
@@ -482,7 +482,7 @@ LeoStackHelper::SetLinkDelayAsFaceMetric()
       continue;
 
     for (auto& face : ndn->getFaceTable()) {
-      auto transport = dynamic_cast<MulticastNetDeviceTransport*>(face.getTransport());
+      auto transport = dynamic_cast<NetDeviceTransport*>(face.getTransport());
       if (transport == nullptr)
         continue;
       auto p2p = dynamic_cast<PointToPointChannel*>(&(*(transport->GetNetDevice()->GetChannel())));

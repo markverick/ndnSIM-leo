@@ -24,8 +24,10 @@
 #include "../utils/ndn-ns3-packet-tag.hpp"
 
 #include <ndn-cxx/encoding/block.hpp>
+#include <ndn-cxx/encoding/tlv.hpp>
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/data.hpp>
+#include <ndn-cxx/lp/packet.hpp>
 
 #include "ns3/queue.h"
 
@@ -82,6 +84,22 @@ NetDeviceTransport::~NetDeviceTransport()
   NS_LOG_FUNCTION_NOARGS();
 }
 
+Block stripBlockHeader(BlockHeader header) {
+  namespace tlv = ::ndn::tlv;
+  namespace lp = ::ndn::lp;
+  ::ndn::Buffer::const_iterator first, last;
+  lp::Packet p(header.getBlock());
+  std::tie(first, last) = p.get<lp::FragmentField>(0);
+  try {
+    Block fragmentBlock(::ndn::make_span(&*first, std::distance(first, last)));
+    return fragmentBlock;
+  }
+  catch (const tlv::Error& error) {
+    std::cout << "Non-TLV bytes (size: " << std::distance(first, last) << ")";
+    return header.getBlock();
+  }
+}
+
 ssize_t
 NetDeviceTransport::getSendQueueLength()
 {
@@ -111,15 +129,59 @@ NetDeviceTransport::doSend(const Block& packet)
   NS_LOG_FUNCTION(this << "Sending packet from netDevice with URI"
                   << this->getLocalUri());
 
+
   // convert NFD packet to NS3 packet
   BlockHeader header(packet);
-
   Ptr<ns3::Packet> ns3Packet = Create<ns3::Packet>();
   ns3Packet->AddHeader(header);
 
   // send the NS3 packet
-  m_netDevice->Send(ns3Packet, m_netDevice->GetBroadcast(),
-                    L3Protocol::ETHERNET_FRAME_TYPE);
+  // Use multicast hack (GSL is not of a multicast type, but we
+  // made them do). We cannot determine
+  // the net device type since the Hypatia netdevice
+  // is compiled after (external ns-3 module)
+  auto netDevice = GetNetDevice();
+  if (netDevice->IsMulticast()) {
+    netDevice->Send(ns3Packet, netDevice->GetBroadcast(),
+                      L3Protocol::ETHERNET_FRAME_TYPE);
+  } else {
+    Block block = stripBlockHeader(header);
+    uint32_t tlv_type = block.type();
+    if (tlv_type == ::ndn::tlv::Interest) {
+      Interest i(block);
+      // Removing appended sequence number 
+      std::string prefix = i.getName().getPrefix(-1).toUri();
+      // std::cout << "Interest Prefix: "<< prefix << std::endl;
+      // for (auto it = m_next_interest_hop.begin(); it != m_next_interest_hop.end(); it++) {
+      //   std::cout << "  From prefix: " << it->first << std::endl;
+      // }
+      if (m_next_interest_hop.find(prefix) != m_next_interest_hop.end()) {
+        if (m_next_interest_hop[prefix] != netDevice->GetAddress()) {
+          netDevice->Send(ns3Packet, m_next_interest_hop[prefix],
+                          L3Protocol::ETHERNET_FRAME_TYPE);
+        }
+      }
+    }
+    else if (tlv_type == ::ndn::tlv::Data) {
+      Data d(block);
+      std::string prefix = d.getName().getPrefix(-1).toUri();
+      // std::cout << "Data Prefix: "<< prefix << std::endl;
+      if (m_next_data_hops.find(prefix) != m_next_data_hops.end()) {
+        for (Address addr : m_next_data_hops[prefix]) {
+          netDevice->Send(ns3Packet, addr,
+                        L3Protocol::ETHERNET_FRAME_TYPE);
+        }
+      }
+    } else {
+      std::cout << "UNKNOWN TLV TYPE: " << tlv_type << std::endl; 
+    }
+    // for (auto address : m_broadcastAddresses) {
+    //   // std::cout << address << std::endl;
+    //   Ptr<ns3::Packet> p = ns3Packet->Copy();
+    //   netDevice->Send(p, address,
+    //                     L3Protocol::ETHERNET_FRAME_TYPE);
+    // }
+  }
 }
 
 // callback
@@ -138,7 +200,55 @@ NetDeviceTransport::receiveFromNetDevice(Ptr<NetDevice> device,
   BlockHeader header;
   packet->RemoveHeader(header);
 
+  if (!device->IsMulticast()) {
+    Block block = stripBlockHeader(header);
+    uint32_t tlv_type = block.type();
+    if (tlv_type == ::ndn::tlv::Interest) {
+      Interest i(block);
+      // Removing appended sequence number 
+      std::string prefix = i.getName().getPrefix(-1).toUri();
+      SetNextDataHop(prefix, from);
+      // AddNextDataHop(prefix, from);
+    }
+    else if (tlv_type == ::ndn::tlv::Data) {
+      // Data d(block);
+      // std::string prefix = d.getName().getPrefix(-1).toUri();
+      // // std::cout << "Data Prefix: "<< prefix << std::endl;
+
+      // TODO: Maybe do something like removing the entry when timer runs out.
+      
+    } else {
+      std::cout << "UNKNOWN TLV TYPE: " << tlv_type << std::endl; 
+    }
+  }
   this->receive(std::move(header.getBlock()));
+}
+
+void
+NetDeviceTransport::SetNextInterestHop(std::string prefix, Address dest) {
+  m_next_interest_hop[prefix] = dest;
+}
+
+void
+NetDeviceTransport::SetNextDataHop(std::string prefix, Address dest) {
+  std::set<Address> v;
+  v.insert(dest);
+  if (m_next_data_hops.find(prefix) != m_next_data_hops.end()) {
+    m_next_data_hops[prefix].clear();
+  }
+  m_next_data_hops[prefix] = v;
+}
+
+
+void
+NetDeviceTransport::AddNextDataHop(std::string prefix, Address dest) {
+  if (m_next_data_hops.find(prefix) == m_next_data_hops.end()) {
+    std::set<Address> v;
+    v.insert(dest);
+    m_next_data_hops[prefix] = v;
+  } else {
+    m_next_data_hops[prefix].insert(dest);
+  }
 }
 
 Ptr<NetDevice>

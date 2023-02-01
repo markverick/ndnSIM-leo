@@ -37,8 +37,7 @@
 #include "ns3/wifi-net-device.h"
 #include "ns3/point-to-point-laser-net-device.h"
 #include "ns3/ipv4.h"
-// #include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
-#include "ns3/ndn-multicast-net-device-transport.h"
+#include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
 #include "ns3/ndn-leo-stack-helper.h"
 #include "ndn-sat-simulator.h"
 
@@ -280,6 +279,10 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> ot
 
       ns3::ndn::FibHelper::AddRoute(node, prefix, face, metric);
 
+      ns3::ndn::NetDeviceTransport* transport = dynamic_cast<ns3::ndn::NetDeviceTransport*>(face->getTransport());
+
+      // Prevent GSL from sending
+      transport->SetNextInterestHop(prefix, netDevice->GetAddress());
       return;
     }
   }
@@ -342,7 +345,7 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> ot
     NS_ASSERT_MSG(gsNdn != 0, "Ndn stack should be installed on the ground station node");
     shared_ptr<ns3::ndn::Face> gsFace = gsNdn->getFaceByNetDevice(gsNetDevice);
     NS_ASSERT_MSG(gsFace != 0, "There is no face associated with the gsl link");
-    ns3::ndn::MulticastNetDeviceTransport* gsTransport = dynamic_cast<ns3::ndn::MulticastNetDeviceTransport*>(gsFace->getTransport());
+    ns3::ndn::NetDeviceTransport* gsTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>(gsFace->getTransport());
     NS_ASSERT_MSG(gsTransport != 0, "There is no valid transport associated with the ground station face");
 
     Ptr<ns3::ndn::L3Protocol> satNdn = satNode->GetObject<ns3::ndn::L3Protocol>();
@@ -350,13 +353,13 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> ot
     shared_ptr<ns3::ndn::Face> satFace = satNdn->getFaceByNetDevice(satNetDevice);
     NS_ASSERT_MSG(satFace != 0, "There is no face associated with the gsl link");
     // TODO: Maybe unsafe pointer, fix later
-    ns3::ndn::MulticastNetDeviceTransport* satTransport = dynamic_cast<ns3::ndn::MulticastNetDeviceTransport*>(satFace->getTransport());
+    ns3::ndn::NetDeviceTransport* satTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>(satFace->getTransport());
     NS_ASSERT_MSG(satTransport != 0, "There is no valid transport associated with the ground station face");
     if (node == gsNode) {
       // gs -> sat
       ns3::ndn::FibHelper::AddRoute(node, prefix, gsFace, metric);
       gsTransport->SetNextInterestHop(prefix, satNetDevice->GetAddress());
-      satTransport->SetNextDataHop(prefix, gsNetDevice->GetAddress());
+      // satTransport->SetNextDataHop(prefix, gsNetDevice->GetAddress());
       // satTransport->AddBroadcastAddress(gsNetDevice->GetAddress());
       // netDeviceGS->SetDstAddress(netDevice->GetAddress());
     } else {
@@ -367,7 +370,7 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, string prefix, ns3::Ptr<ns3::Node> ot
       // cout << "ADD BROADCAST: " << satNetDevice->GetAddress() << ", " << gsNetDevice->GetAddress() << endl;
       // gsTransport->SetBroadcastAddress(satNetDevice->GetAddress());
       satTransport->SetNextInterestHop(prefix, gsNetDevice->GetAddress());
-      gsTransport->SetNextDataHop(prefix, satNetDevice->GetAddress());
+      // gsTransport->SetNextDataHop(prefix, satNetDevice->GetAddress());
       // satTransport->AddBroadcastAddress(gsNetDevice->GetAddress());
       // netDevice->SetDstAddress(netDeviceGS->GetAddress());
     }

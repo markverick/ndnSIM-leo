@@ -342,7 +342,7 @@ GSLNetDevice::SetReceiveErrorModel (Ptr<ErrorModel> em)
 }
 
 void
-GSLNetDevice::Receive (Ptr<Packet> packet)
+GSLNetDevice::Receive (Ptr<Packet> packet, Address from)
 {
   NS_LOG_FUNCTION (this << packet << this->GetNode()->GetId());
   uint16_t protocol = 0;
@@ -387,7 +387,7 @@ GSLNetDevice::Receive (Ptr<Packet> packet)
           // traffic reception
           //   a solution would require changes to NS3 core to support send and receive that receive a
           // 'from' argument for distributed simulator
-          m_promiscCallback (this, packet, protocol, GetAddress(), GetAddress (), NetDevice::PACKET_HOST);
+          m_promiscCallback (this, packet, protocol, from, GetAddress (), NetDevice::PACKET_HOST);
         }
 
       m_macRxTrace (originalPacket);
@@ -615,7 +615,7 @@ void
 GSLNetDevice::DoMpiReceive (Ptr<Packet> p)
 {
   NS_LOG_FUNCTION (this << p);
-  Receive (p);
+  Receive (p, this->m_address);
 }
 
 bool
