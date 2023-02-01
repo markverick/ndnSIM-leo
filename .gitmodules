@@ -1,3 +1,9 @@
 [submodule "contrib/basic-sim"]
 	path = contrib/basic-sim
 	url = git@github.com:snkas/basic-sim.git
+[submodule "src/ndnSIM/NFD"]
+	path = src/ndnSIM/NFD
+	url = git@github.com:named-data-ndnSIM/NFD.git
+[submodule "src/ndnSIM/ndn-cxx"]
+	path = src/ndnSIM/ndn-cxx
+	url = git@github.com:named-data-ndnSIM/ndn-cxx.git
