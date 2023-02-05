@@ -5,7 +5,7 @@ using namespace ns3;
 int
 main(int argc, char* argv[])
 {
-  string ns3_config = "scenarios/config/NY_tokyo.properties";
+  string ns3_config = "scenarios/config/NY_tokyo_test.properties";
   NDNSatSimulator sim = NDNSatSimulator(ns3_config);
   sim.Run();
 }
