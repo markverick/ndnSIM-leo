@@ -8088,3 +8088,4 @@ GSL: 442 -> 1592
 +199.075048467s 1592 ndn.Consumer:OnData(0x55aa9df0d330, 0x55aad0b23770)
 +199.075048467s 1592 ndn.Consumer:OnData(): [INFO ] < DATA for 199
 +199.075048467s 1592 ndn.Consumer:OnData(): [DEBUG] Hop count: 7
+Waf: Entering directory `/home/vagrant/ns-3-dev-leo/build'

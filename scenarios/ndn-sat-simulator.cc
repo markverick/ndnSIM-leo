@@ -528,7 +528,11 @@ void NDNSatSimulator::Run()
   m_gsl_data_rate_megabit_per_s = parse_positive_double(getConfigParamOrDefault("gsl_data_rate_megabit_per_s", "10000"));
   m_isl_max_queue_size_pkts = parse_positive_int64(getConfigParamOrDefault("isl_max_queue_size_pkts", "10000"));
   m_gsl_max_queue_size_pkts = parse_positive_int64(getConfigParamOrDefault("gsl_max_queue_size_pkts", "10000"));
-
+  // Default to 100ms
+  m_pingmesh_interval_ns = parse_positive_int64(getConfigParamOrDefault("m_pingmesh_interval_ns", "100000000"));
+  m_payload_size = parse_positive_int64(getConfigParamOrDefault("m_payload_size", "1024"));
+  int64_t interest_per_second = 1000000000 / m_pingmesh_interval_ns;
+  // cout << interest_per_second << endl;
   ReadISLs();
 
   AddGSLs();
@@ -556,14 +560,14 @@ void NDNSatSimulator::Run()
   // Consumer will request /prefix/0, /prefix/1, ...
 
   consumerHelper.SetPrefix(m_prefix);
-  consumerHelper.SetAttribute("Frequency", StringValue("1")); // 1 interests a second
+  consumerHelper.SetAttribute("Frequency", StringValue(to_string(interest_per_second)));
   consumerHelper.Install(node1); // first node
 
   // Producer
   ndn::AppHelper producerHelper("ns3::ndn::Producer");
   // Producer will reply to all requests starting with /prefix
   producerHelper.SetPrefix(m_prefix);
-  producerHelper.SetAttribute("PayloadSize", StringValue("1024"));
+  producerHelper.SetAttribute("PayloadSize", StringValue(to_string(m_payload_size)));
   producerHelper.Install(node2); // last node
 
   cout << "Setting up FIB schedules..."  << endl;
@@ -571,7 +575,7 @@ void NDNSatSimulator::Run()
   ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
 
   cout << "Starting the simulation"  << endl;
-  Simulator::Stop(Seconds(10));
+  Simulator::Stop(Seconds(500));
 
   Simulator::Run();
   Simulator::Destroy();

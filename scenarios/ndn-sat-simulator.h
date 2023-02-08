@@ -103,6 +103,8 @@ private:
   int64_t m_isl_utilization_tracking_interval_ns;
   int64_t m_node1_id;
   int64_t m_node2_id;
+  int64_t m_pingmesh_interval_ns;
+  int64_t m_payload_size;
 
 };
 
