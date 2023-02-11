@@ -44,7 +44,56 @@
 namespace ns3 {
 
 NDNSatSimulator::NDNSatSimulator(string config) {
-    ReadConfig(config);
+  ReadConfig(config);
+  // setting default parameters for PointToPoint links and channels
+  Config::SetDefault("ns3::PointToPointNetDevice::DataRate", StringValue("1Mbps"));
+  Config::SetDefault("ns3::PointToPointChannel::Delay", StringValue("10ms"));
+  Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
+
+  // Configuration
+  string ns3_config = "scenarios/config/3nodes_test.properties";
+
+  // Reading nodes
+  
+  ReadSatellites();
+
+  ReadGroundStations();
+
+  // Only ground stations are valid endpoints
+  for (uint32_t i = 0; i < m_groundStations.size(); i++) {
+      m_endpoints.insert(m_satelliteNodes.GetN() + i);
+  } 
+
+  m_allNodes.Add(m_satelliteNodes);
+  m_allNodes.Add(m_groundStationNodes);
+  std::cout << "  > Number of nodes............. " << m_allNodes.GetN() << std::endl;
+
+
+
+  // Link settings
+  m_ipv4_helper.SetBase ("10.0.0.0", "255.255.255.0");
+  m_isl_data_rate_megabit_per_s = parse_positive_double(getConfigParamOrDefault("isl_data_rate_megabit_per_s", "10000"));
+  m_gsl_data_rate_megabit_per_s = parse_positive_double(getConfigParamOrDefault("gsl_data_rate_megabit_per_s", "10000"));
+  m_isl_max_queue_size_pkts = parse_positive_int64(getConfigParamOrDefault("isl_max_queue_size_pkts", "10000"));
+  m_gsl_max_queue_size_pkts = parse_positive_int64(getConfigParamOrDefault("gsl_max_queue_size_pkts", "10000"));
+  // Default to 100ms
+  m_pingmesh_interval_ns = parse_positive_int64(getConfigParamOrDefault("m_pingmesh_interval_ns", "100000000"));
+  m_payload_size = parse_positive_int64(getConfigParamOrDefault("m_payload_size", "1024"));
+  m_interest_per_second = 1000000000 / m_pingmesh_interval_ns;
+  // cout << interest_per_second << endl;
+  ReadISLs();
+
+  AddGSLs();
+  // Install NDN stack on all nodes
+  ndn::LeoStackHelper ndnHelper;
+  // ndnHelper.SetDefaultRoutes(true);
+  ndnHelper.Install(m_allNodes);
+
+  std::cout << "  > Installed NDN stacks" << std::endl;
+
+  // Choosing forwarding strategy
+  std::cout << "  > Installing forwarding strategy" << std::endl;
+  ndn::StrategyChoiceHelper::Install(m_allNodes, "/prefix", "/localhost/nfd/strategy/multicast");
 }
 std::string NDNSatSimulator::getConfigParamOrDefault(std::string key, std::string default_value) {
   auto it = m_config.find(key);
@@ -495,91 +544,5 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
     }
 }
 
-void NDNSatSimulator::Run()
-{
-  // setting default parameters for PointToPoint links and channels
-  Config::SetDefault("ns3::PointToPointNetDevice::DataRate", StringValue("1Mbps"));
-  Config::SetDefault("ns3::PointToPointChannel::Delay", StringValue("10ms"));
-  Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
-
-  // Configuration
-  string ns3_config = "scenarios/config/3nodes_test.properties";
-
-  // Reading nodes
-  
-  ReadSatellites();
-
-  ReadGroundStations();
-
-  // Only ground stations are valid endpoints
-  for (uint32_t i = 0; i < m_groundStations.size(); i++) {
-      m_endpoints.insert(m_satelliteNodes.GetN() + i);
-  } 
-
-  m_allNodes.Add(m_satelliteNodes);
-  m_allNodes.Add(m_groundStationNodes);
-  std::cout << "  > Number of nodes............. " << m_allNodes.GetN() << std::endl;
-
-
-
-  // Link settings
-  m_ipv4_helper.SetBase ("10.0.0.0", "255.255.255.0");
-  m_isl_data_rate_megabit_per_s = parse_positive_double(getConfigParamOrDefault("isl_data_rate_megabit_per_s", "10000"));
-  m_gsl_data_rate_megabit_per_s = parse_positive_double(getConfigParamOrDefault("gsl_data_rate_megabit_per_s", "10000"));
-  m_isl_max_queue_size_pkts = parse_positive_int64(getConfigParamOrDefault("isl_max_queue_size_pkts", "10000"));
-  m_gsl_max_queue_size_pkts = parse_positive_int64(getConfigParamOrDefault("gsl_max_queue_size_pkts", "10000"));
-  // Default to 100ms
-  m_pingmesh_interval_ns = parse_positive_int64(getConfigParamOrDefault("m_pingmesh_interval_ns", "100000000"));
-  m_payload_size = parse_positive_int64(getConfigParamOrDefault("m_payload_size", "1024"));
-  int64_t interest_per_second = 1000000000 / m_pingmesh_interval_ns;
-  // cout << interest_per_second << endl;
-  ReadISLs();
-
-  AddGSLs();
-  // Install NDN stack on all nodes
-  ndn::LeoStackHelper ndnHelper;
-  // ndnHelper.SetDefaultRoutes(true);
-  ndnHelper.Install(m_allNodes);
-
-  std::cout << "  > Installed NDN stacks" << std::endl;
-
-  // Choosing forwarding strategy
-  std::cout << "  > Installing forwarding strategy" << std::endl;
-  ndn::StrategyChoiceHelper::Install(m_allNodes, "/prefix", "/localhost/nfd/strategy/multicast");
-
-  // Installing applications
-  std::string prefix = "/prefix/uid-";
-  Ptr<Node> node1 = m_allNodes.Get(m_node1_id);
-  Ptr<Node> node2 = m_allNodes.Get(m_node2_id);
-  std::string prefix1 = prefix + to_string(m_node1_id);
-  std::string prefix2 = prefix + to_string(m_node2_id);
-  m_prefix = prefix2;
-  // cout << "PREFIX: " << prefix2 << endl;
-  // Consumer
-  ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
-  // Consumer will request /prefix/0, /prefix/1, ...
-
-  consumerHelper.SetPrefix(m_prefix);
-  consumerHelper.SetAttribute("Frequency", StringValue(to_string(interest_per_second)));
-  consumerHelper.Install(node1); // first node
-
-  // Producer
-  ndn::AppHelper producerHelper("ns3::ndn::Producer");
-  // Producer will reply to all requests starting with /prefix
-  producerHelper.SetPrefix(m_prefix);
-  producerHelper.SetAttribute("PayloadSize", StringValue(to_string(m_payload_size)));
-  producerHelper.Install(node2); // last node
-
-  cout << "Setting up FIB schedules..."  << endl;
-
-  ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
-
-  cout << "Starting the simulation"  << endl;
-  Simulator::Stop(Seconds(500));
-
-  Simulator::Run();
-  Simulator::Destroy();
-
-}
 
 } // namespace ns3

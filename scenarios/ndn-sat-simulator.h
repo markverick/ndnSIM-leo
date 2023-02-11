@@ -52,8 +52,6 @@ public:
 
   void Run();
 
-private:
-
   std::string getConfigParamOrDefault(std::string key, std::string default_value);
 
   void ReadConfig(std::string conf);
@@ -105,7 +103,7 @@ private:
   int64_t m_node2_id;
   int64_t m_pingmesh_interval_ns;
   int64_t m_payload_size;
-
+  int64_t m_interest_per_second;
 };
 
 }
