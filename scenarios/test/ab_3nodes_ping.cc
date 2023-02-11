@@ -19,14 +19,14 @@ public:
     // Consumer will request /prefix/0, /prefix/1, ...
 
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("Frequency", StringValue(to_string(m_interest_per_second)));
+    consumerHelper.SetAttribute("Frequency", StringValue("1"));
     consumerHelper.Install(node1); // first node
 
     // Producer
     ndn::AppHelper producerHelper("ns3::ndn::Producer");
     // Producer will reply to all requests starting with /prefix
     producerHelper.SetPrefix(m_prefix);
-    producerHelper.SetAttribute("PayloadSize", StringValue(to_string(m_payload_size)));
+    producerHelper.SetAttribute("PayloadSize", StringValue("0"));
     producerHelper.Install(node2); // last node
 
     cout << "Setting up FIB schedules..."  << endl;
@@ -34,7 +34,7 @@ public:
     ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
 
     cout << "Starting the simulation"  << endl;
-    Simulator::Stop(Seconds(500));
+    Simulator::Stop(Seconds(10));
 
     Simulator::Run();
     Simulator::Destroy();
@@ -45,7 +45,7 @@ public:
 int
 main(int argc, char* argv[])
 {
-  string ns3_config = "scenarios/config/3nodes_test.properties";
+  string ns3_config = "scenarios/config/ab_3nodes.properties";
   ns3::ScenarioSim sim = ns3::ScenarioSim(ns3_config);
   sim.Run();
   return 0;
