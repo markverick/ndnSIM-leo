@@ -1,5 +1,8 @@
 // 3nodes_test.cpp
 #include "../ndn-sat-simulator.h"
+// #include <nstime.h>
+#include "ns3/ndnSIM/apps/ndn-consumer.hpp"
+#define END_TIME 10
 
 namespace ns3 {
 
@@ -13,14 +16,15 @@ public:
     std::string prefix1 = prefix + to_string(m_node1_id);
     std::string prefix2 = prefix + to_string(m_node2_id);
     m_prefix = prefix2;
-    // cout << "PREFIX: " << prefix2 << endl;
-    // Consumer
-    ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
-    // Consumer will request /prefix/0, /prefix/1, ...
 
+    ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
     consumerHelper.SetPrefix(m_prefix);
     consumerHelper.SetAttribute("Frequency", StringValue("1"));
+    consumerHelper.SetAttribute("StartSeq", StringValue("0"));
     consumerHelper.Install(node1); // first node
+
+    consumerHelper.SetAttribute("StartSeq", StringValue("5"));
+     consumerHelper.Install(node1); // first node
 
     // Producer
     ndn::AppHelper producerHelper("ns3::ndn::Producer");
@@ -34,7 +38,7 @@ public:
     ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
 
     cout << "Starting the simulation"  << endl;
-    Simulator::Stop(Seconds(200));
+    Simulator::Stop(Seconds(10));
 
     Simulator::Run();
     Simulator::Destroy();
@@ -45,7 +49,7 @@ public:
 int
 main(int argc, char* argv[])
 {
-  string ns3_config = "scenarios/config/ab_starlink.properties";
+  string ns3_config = "scenarios/config/a_b_starlink.properties";
   ns3::ScenarioSim sim = ns3::ScenarioSim(ns3_config);
   sim.Run();
   return 0;

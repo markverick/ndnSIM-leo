@@ -16,7 +16,12 @@ public:
     std::string prefix1 = prefix + to_string(m_node1_id);
     std::string prefix2 = prefix + to_string(m_node2_id);
     m_prefix = prefix2;
-
+    // cout << "PREFIX: " << prefix2 << endl;
+    // Consumer
+    // vector<std::tuple<Time, uint32_t>> batches;
+    // for (int t = 0; t < END_TIME; t += m_pingmesh_interval_ns) {
+    //   batches.emplace_back(NanoSeconds(t))
+    // }
     ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
     consumerHelper.SetPrefix(m_prefix);
     consumerHelper.SetAttribute("Frequency", StringValue("1"));
@@ -49,7 +54,7 @@ public:
 int
 main(int argc, char* argv[])
 {
-  string ns3_config = "scenarios/config/ab_starlink.properties";
+  string ns3_config = "scenarios/config/a_b_3nodes.properties";
   ns3::ScenarioSim sim = ns3::ScenarioSim(ns3_config);
   sim.Run();
   return 0;

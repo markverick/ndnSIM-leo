@@ -34,7 +34,7 @@ public:
     ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
 
     cout << "Starting the simulation"  << endl;
-    Simulator::Stop(Seconds(10));
+    Simulator::Stop(Seconds(200));
 
     Simulator::Run();
     Simulator::Destroy();
@@ -45,7 +45,7 @@ public:
 int
 main(int argc, char* argv[])
 {
-  string ns3_config = "scenarios/config/ab_3nodes.properties";
+  string ns3_config = "scenarios/config/a_b_starlink.properties";
   ns3::ScenarioSim sim = ns3::ScenarioSim(ns3_config);
   sim.Run();
   return 0;

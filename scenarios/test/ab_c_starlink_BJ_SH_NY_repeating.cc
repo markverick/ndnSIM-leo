@@ -11,32 +11,27 @@ public:
   using NDNSatSimulator::NDNSatSimulator;
   void Run() {
     std::string prefix = "/prefix/uid-";
-    Ptr<Node> node1 = m_allNodes.Get(m_node1_id);
-    Ptr<Node> node2 = m_allNodes.Get(m_node2_id);
-    std::string prefix1 = prefix + to_string(m_node1_id);
-    std::string prefix2 = prefix + to_string(m_node2_id);
-    m_prefix = prefix2;
-    // cout << "PREFIX: " << prefix2 << endl;
-    // Consumer
-    // vector<std::tuple<Time, uint32_t>> batches;
-    // for (int t = 0; t < END_TIME; t += m_pingmesh_interval_ns) {
-    //   batches.emplace_back(NanoSeconds(t))
-    // }
-    ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
-    consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("Frequency", StringValue("1"));
-    consumerHelper.SetAttribute("StartSeq", StringValue("0"));
-    consumerHelper.Install(node1); // first node
+    Ptr<Node> node1 = m_allNodes.Get(1590); // Beijing
+    Ptr<Node> node2 = m_allNodes.Get(1586); // Shanghai
+    Ptr<Node> node3 = m_allNodes.Get(1593); // New York
+    m_prefix = prefix + to_string(1593);
 
+    ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
+    consumerHelper.SetAttribute("Frequency", StringValue("1"));
+    consumerHelper.SetPrefix(m_prefix);
+    consumerHelper.SetAttribute("StartSeq", StringValue("0"));
+    consumerHelper.Install(node1);
+
+    consumerHelper.SetPrefix(m_prefix);
     consumerHelper.SetAttribute("StartSeq", StringValue("5"));
-     consumerHelper.Install(node1); // first node
+    consumerHelper.Install(node2);
 
     // Producer
     ndn::AppHelper producerHelper("ns3::ndn::Producer");
     // Producer will reply to all requests starting with /prefix
     producerHelper.SetPrefix(m_prefix);
     producerHelper.SetAttribute("PayloadSize", StringValue("0"));
-    producerHelper.Install(node2); // last node
+    producerHelper.Install(node3);
 
     cout << "Setting up FIB schedules..."  << endl;
 
@@ -54,7 +49,7 @@ public:
 int
 main(int argc, char* argv[])
 {
-  string ns3_config = "scenarios/config/ab_3nodes.properties";
+  string ns3_config = "scenarios/config/a_b_starlink.properties";
   ns3::ScenarioSim sim = ns3::ScenarioSim(ns3_config);
   sim.Run();
   return 0;
