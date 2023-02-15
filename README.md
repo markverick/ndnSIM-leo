@@ -39,3 +39,18 @@ Our approach is to identify a common ground, extract reusable pieces of the code
 4) Apply Hypatia's mobility model to the NDN Stack for calculating delays.
 5) Extends some of the NFD and ndnSIM components to add functionalities for satellite topology.
 6) Internal modules are only modified for compatibility issues.
+
+## Installation
+```
+git submodule update --recursive --init
+./waf configure --enable-mpi
+```
+
+## Running
+```
+NS_LOG=ndn.Consumer:ndn.Producer ./waf --run=<scenario name>
+```
+For example
+```
+NS_LOG=ndn.Consumer:ndn.Producer ./waf --run=a_b_3nodes_ping.cc
+```
