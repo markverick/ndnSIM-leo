@@ -76,6 +76,8 @@ NDNSatSimulator::NDNSatSimulator(string config) {
   m_gsl_data_rate_megabit_per_s = parse_positive_double(getConfigParamOrDefault("gsl_data_rate_megabit_per_s", "10000"));
   m_isl_max_queue_size_pkts = parse_positive_int64(getConfigParamOrDefault("isl_max_queue_size_pkts", "10000"));
   m_gsl_max_queue_size_pkts = parse_positive_int64(getConfigParamOrDefault("gsl_max_queue_size_pkts", "10000"));
+  m_isl_error_rate = parse_positive_double(getConfigParamOrDefault("isl_error_rate", "0"));
+  m_gsl_error_rate = parse_positive_double(getConfigParamOrDefault("gsl_error_rate", "0"));
   // Default to 100ms
   m_pingmesh_interval_ns = parse_positive_int64(getConfigParamOrDefault("m_pingmesh_interval_ns", "100000000"));
   m_payload_size = parse_positive_int64(getConfigParamOrDefault("m_payload_size", "1024"));
@@ -241,10 +243,14 @@ void NDNSatSimulator::ReadISLs()
     // Link helper
     PointToPointLaserHelper p2p_laser_helper;
     std::string max_queue_size_str = format_string("%" PRId64 "p", m_isl_max_queue_size_pkts);
+    Ptr<RateErrorModel> em = CreateObject<RateErrorModel> ();
+    em->SetAttribute ("ErrorRate", DoubleValue (m_isl_error_rate));
     p2p_laser_helper.SetQueue("ns3::DropTailQueue<Packet>", "MaxSize", QueueSizeValue(QueueSize(max_queue_size_str)));
     p2p_laser_helper.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (std::to_string(m_isl_data_rate_megabit_per_s) + "Mbps")));
+    p2p_laser_helper.SetDeviceAttribute ("ReceiveErrorModel", PointerValue(em));
     std::cout << "    >> ISL data rate........ " << m_isl_data_rate_megabit_per_s << " Mbit/s" << std::endl;
     std::cout << "    >> ISL max queue size... " << m_isl_max_queue_size_pkts << " packets" << std::endl;
+    std::cout << "    >> ISL loss rate... " << m_isl_error_rate << std::endl;
 
     // Traffic control helper
     // TrafficControlHelper tch_isl;
@@ -448,10 +454,14 @@ void NDNSatSimulator::AddGSLs() {
   // Link helper
   GSLHelper gsl_helper;
   std::string max_queue_size_str = format_string("%" PRId64 "p", m_gsl_max_queue_size_pkts);
+  Ptr<RateErrorModel> em = CreateObject<RateErrorModel>();
+  em->SetAttribute("ErrorRate", DoubleValue(m_gsl_error_rate));
   gsl_helper.SetQueue("ns3::DropTailQueue<Packet>", "MaxSize", QueueSizeValue(QueueSize(max_queue_size_str)));
   gsl_helper.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (std::to_string(m_gsl_data_rate_megabit_per_s) + "Mbps")));
+  gsl_helper.SetDeviceAttribute ("ReceiveErrorModel", PointerValue(em));
   std::cout << "    >> GSL data rate........ " << m_gsl_data_rate_megabit_per_s << " Mbit/s" << std::endl;
   std::cout << "    >> GSL max queue size... " << m_gsl_max_queue_size_pkts << " packets" << std::endl;
+  std::cout << "    >> GSL loss rate... " << m_gsl_error_rate << std::endl;
 
   // Traffic control helper
   // TrafficControlHelper tch_gsl;

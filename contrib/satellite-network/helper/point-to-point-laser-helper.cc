@@ -36,6 +36,8 @@
 #include "ns3/string.h"
 #include "ns3/mpi-interface.h"
 #include "ns3/mpi-receiver.h"
+#include "ns3/error-model.h"
+#include "ns3/pointer.h"
 
 #include "ns3/trace-helper.h"
 #include "point-to-point-laser-helper.h"

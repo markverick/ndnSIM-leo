@@ -97,6 +97,8 @@ public:
   double m_gsl_data_rate_megabit_per_s;
   int64_t m_isl_max_queue_size_pkts;
   int64_t m_gsl_max_queue_size_pkts;
+  double m_isl_error_rate;
+  double m_gsl_error_rate;
   bool m_enable_isl_utilization_tracking;
   int64_t m_isl_utilization_tracking_interval_ns;
   int64_t m_node1_id;
