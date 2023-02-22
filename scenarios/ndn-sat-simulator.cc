@@ -95,7 +95,7 @@ NDNSatSimulator::NDNSatSimulator(string config) {
 
   // Choosing forwarding strategy
   std::cout << "  > Installing forwarding strategy" << std::endl;
-  ndn::StrategyChoiceHelper::Install(m_allNodes, "/prefix", "/localhost/nfd/strategy/multicast");
+  ndn::StrategyChoiceHelper::Install(m_allNodes, "/prefix", "/localhost/nfd/strategy/best-route");
 }
 std::string NDNSatSimulator::getConfigParamOrDefault(std::string key, std::string default_value) {
   auto it = m_config.find(key);
@@ -319,6 +319,9 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node,
 {
   for (uint32_t deviceId = 0; deviceId < node->GetNDevices(); deviceId++) {
     // if (node->GetId() < m_satelliteNodes.GetN() && otherNode->GetId() < m_satelliteNodes.GetN()) {
+    // Remove existing route before adding the new one
+    shared_ptr<ns3::ndn::Face> f = node->GetObject<ns3::ndn::L3Protocol>()->getFaceByNetDevice(node->GetDevice(deviceId));
+    ns3::ndn::FibHelper::RemoveRoute(node, prefix, f);
     // Laser
     Ptr<PointToPointLaserNetDevice> netDevice = DynamicCast<PointToPointLaserNetDevice>(node->GetDevice(deviceId));
     if (netDevice == 0)
@@ -524,7 +527,6 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
         if (!std::regex_search(full_path, match, rgx)) continue;
         double ms = stod(match[1]) / 1000000;
 
-        // Add RemoveRoute schedule by emptying temporary set
         int64_t current_node;
         // int destination_node;
         string prefix;
