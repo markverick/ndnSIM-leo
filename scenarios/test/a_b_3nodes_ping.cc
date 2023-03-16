@@ -19,22 +19,22 @@ public:
     // Consumer will request /prefix/0, /prefix/1, ...
 
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("Frequency", StringValue("1"));
-    consumerHelper.Install(node1); // first node
+    consumerHelper.SetAttribute("Frequency", StringValue("1000"));
+    consumerHelper.Install(node1).Start(Seconds(0.000001)); // first node
 
     // Producer
     ndn::AppHelper producerHelper("ns3::ndn::Producer");
     // Producer will reply to all requests starting with /prefix
     producerHelper.SetPrefix(m_prefix);
     producerHelper.SetAttribute("PayloadSize", StringValue("0"));
-    producerHelper.Install(node2); // last node
+    producerHelper.Install(node2).Start(Seconds(0.000001)); // last node
 
     cout << "Setting up FIB schedules..."  << endl;
 
     ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
 
     cout << "Starting the simulation"  << endl;
-    Simulator::Stop(Seconds(10));
+    Simulator::Stop(Seconds(500));
 
     Simulator::Run();
     Simulator::Destroy();

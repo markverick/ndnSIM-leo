@@ -17,16 +17,17 @@ public:
     // Consumer
     ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
     // Consumer will request /prefix/0, /prefix/1, ...
+
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("Frequency", StringValue("1"));
-    consumerHelper.Install(node1).Start(Seconds(0)); // first node
+    consumerHelper.SetAttribute("Frequency", StringValue("1000"));
+    consumerHelper.Install(node1).Start(Seconds(0.000001)); // first node
 
     // Producer
     ndn::AppHelper producerHelper("ns3::ndn::Producer");
     // Producer will reply to all requests starting with /prefix
     producerHelper.SetPrefix(m_prefix);
-    producerHelper.SetAttribute("PayloadSize", StringValue("0"));
-    producerHelper.Install(node2).Start(Seconds(0)); // last node
+    producerHelper.SetAttribute("PayloadSize", StringValue("1000"));
+    producerHelper.Install(node2).Start(Seconds(0.000001)); // last node
 
     cout << "Setting up FIB schedules..."  << endl;
 
@@ -40,11 +41,11 @@ public:
   }
 };
 }
-// NS_LOG=ndn.Consumer ./waf --run=a_b_starlink_BJ_NY_loss |& tee -a logs/ndn_ping_1s_for_500.txt
+
 int
 main(int argc, char* argv[])
 {
-  string ns3_config = "scenarios/config/a_b_starlink.properties";
+  string ns3_config = "scenarios/config/a_b_starlink_loss.properties";
   ns3::ScenarioSim sim = ns3::ScenarioSim(ns3_config);
   sim.Run();
   return 0;

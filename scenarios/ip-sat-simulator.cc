@@ -37,18 +37,17 @@
 #include "ns3/wifi-net-device.h"
 #include "ns3/point-to-point-laser-net-device.h"
 #include "ns3/ipv4.h"
-#include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
-#include "ns3/ndn-leo-stack-helper.h"
-#include "ndn-sat-simulator.h"
+
+#include "ip-sat-simulator.h"
 
 namespace ns3 {
 
-NDNSatSimulator::NDNSatSimulator(string config) {
+IPSatSimulator::IPSatSimulator(string config) {
   ReadConfig(config);
   // setting default parameters for PointToPoint links and channels
-  Config::SetDefault("ns3::PointToPointNetDevice::DataRate", StringValue("1Mbps"));
-  Config::SetDefault("ns3::PointToPointChannel::Delay", StringValue("10ms"));
-  Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
+  // Config::SetDefault("ns3::PointToPointNetDevice::DataRate", StringValue("1Mbps"));
+  // Config::SetDefault("ns3::PointToPointChannel::Delay", StringValue("10ms"));
+  // Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
 
   // Configuration
   string ns3_config = "scenarios/config/3nodes_test.properties";
@@ -97,14 +96,14 @@ NDNSatSimulator::NDNSatSimulator(string config) {
   std::cout << "  > Installing forwarding strategy" << std::endl;
   ndn::StrategyChoiceHelper::Install(m_allNodes, "/prefix", "/localhost/nfd/strategy/multicast");
 }
-std::string NDNSatSimulator::getConfigParamOrDefault(std::string key, std::string default_value) {
+std::string IPSatSimulator::getConfigParamOrDefault(std::string key, std::string default_value) {
   auto it = m_config.find(key);
   if (it != m_config.end())
     return it->second;
   return default_value;
 }
 
-void NDNSatSimulator::ReadConfig(std::string conf) {
+void IPSatSimulator::ReadConfig(std::string conf) {
   // Read the config
   m_config = read_config(conf);
   m_satellite_network_dir = getConfigParamOrDefault("satellite_network_dir", "network_dir");
@@ -122,7 +121,7 @@ void NDNSatSimulator::ReadConfig(std::string conf) {
   printf("\n");
 }
 
-void NDNSatSimulator::ReadSatellites()
+void IPSatSimulator::ReadSatellites()
 {
   // Open file
   std::ifstream fs;
@@ -187,7 +186,7 @@ void NDNSatSimulator::ReadSatellites()
   fs.close();
 }
 
-void NDNSatSimulator::ReadGroundStations()
+void IPSatSimulator::ReadGroundStations()
 {
   // Create a new file stream to open the file
   std::ifstream fs;
@@ -237,7 +236,7 @@ void NDNSatSimulator::ReadGroundStations()
   // }
 }
 
-void NDNSatSimulator::ReadISLs()
+void IPSatSimulator::ReadISLs()
 {
 
     // Link helper
@@ -321,6 +320,7 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node,
     // if (node->GetId() < m_satelliteNodes.GetN() && otherNode->GetId() < m_satelliteNodes.GetN()) {
     // Remove existing route before adding the new one
     shared_ptr<ns3::ndn::Face> f = node->GetObject<ns3::ndn::L3Protocol>()->getFaceByNetDevice(node->GetDevice(deviceId));
+    
     // cout << "Removing Face: " << f->getId() << " from node: " << node->GetId() << " with prefix " << prefix << endl;;
     ns3::ndn::FibHelper::RemoveRoute(node, prefix, f);
     // Laser
@@ -453,7 +453,7 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node,
   }
 }
 
-void NDNSatSimulator::AddGSLs() {
+void IPSatSimulator::AddGSLs() {
 
   // Link helper
   GSLHelper gsl_helper;
@@ -518,7 +518,7 @@ void NDNSatSimulator::AddGSLs() {
 
 }
 
-void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dname) {
+void IPSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dname) {
     // Iterate through the dynamic state directory
     for (const auto & entry : filesystem::directory_iterator(dname)) {
         // Extract nanoseconds from file name

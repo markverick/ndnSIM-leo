@@ -224,6 +224,9 @@ Consumer::OnData(shared_ptr<const Data> data)
   // This could be a problem......
   uint32_t seq = data->getName().at(-1).toSequenceNumber();
   NS_LOG_INFO("< DATA for " << seq);
+  // if (seq % 1000 == 0) {
+  //   std::cout << Now().GetNanoSeconds() << "," << seq << std::endl;
+  // }
 
   int hopCount = 0;
   auto hopCountTag = data->getTag<lp::HopCountTag>();
