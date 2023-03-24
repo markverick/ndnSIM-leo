@@ -84,7 +84,8 @@ public:
   std::vector<Ptr<GroundStation> > m_groundStations;  //!< Ground stations
   std::vector<Ptr<Satellite>> m_satellites;           //<! Satellites
   std::set<int64_t> m_endpoints;                      //<! Endpoint ids = ground station ids
-  std::vector<std::tuple<double, Ptr<Node>, string, Ptr<PointToPointLaserNetDevice> > > m_pending_fib;
+  std::shared_ptr<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, Address > > > m_cur_data_hop;
+  // std::vector<std::tuple<double, Ptr<Node>, string, Ptr<PointToPointLaserNetDevice> > > m_pending_fib;
 
   // ISL devices
   Ipv4AddressHelper m_ipv4_helper;
@@ -103,9 +104,6 @@ public:
   int64_t m_isl_utilization_tracking_interval_ns;
   int64_t m_node1_id;
   int64_t m_node2_id;
-  int64_t m_pingmesh_interval_ns;
-  int64_t m_payload_size;
-  int64_t m_interest_per_second;
 };
 
 }

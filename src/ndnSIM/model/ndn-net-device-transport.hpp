@@ -60,6 +60,9 @@ public:
   void
   AddNextDataHop(std::string prefix, Address dest);
 
+  void
+  RemoveNextDataHop(std::string prefix, Address dest);
+
   Ptr<NetDevice>
   GetNetDevice() const;
 

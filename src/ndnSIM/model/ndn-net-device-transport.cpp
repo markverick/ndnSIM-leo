@@ -151,10 +151,6 @@ NetDeviceTransport::doSend(const Block& packet)
       Interest i(block);
       // Removing appended sequence number 
       std::string prefix = i.getName().getPrefix(-1).toUri();
-      // std::cout << "Interest Prefix: "<< prefix << std::endl;
-      // for (auto it = m_next_interest_hop.begin(); it != m_next_interest_hop.end(); it++) {
-      //   std::cout << "  From prefix: " << it->first << std::endl;
-      // }
       if (m_next_interest_hop.find(prefix) != m_next_interest_hop.end()) {
         if (m_next_interest_hop[prefix] != netDevice->GetAddress()) {
           netDevice->Send(ns3Packet, m_next_interest_hop[prefix],
@@ -165,22 +161,15 @@ NetDeviceTransport::doSend(const Block& packet)
     else if (tlv_type == ::ndn::tlv::Data) {
       Data d(block);
       std::string prefix = d.getName().getPrefix(-1).toUri();
-      // std::cout << "Data Prefix: "<< prefix << std::endl;
       if (m_next_data_hops.find(prefix) != m_next_data_hops.end()) {
         for (Address addr : m_next_data_hops[prefix]) {
-          netDevice->Send(ns3Packet, addr,
+          netDevice->Send(ns3Packet->Copy(), addr,
                         L3Protocol::ETHERNET_FRAME_TYPE);
         }
       }
     } else {
       std::cout << "UNKNOWN TLV TYPE: " << tlv_type << std::endl; 
     }
-    // for (auto address : m_broadcastAddresses) {
-    //   // std::cout << address << std::endl;
-    //   Ptr<ns3::Packet> p = ns3Packet->Copy();
-    //   netDevice->Send(p, address,
-    //                     L3Protocol::ETHERNET_FRAME_TYPE);
-    // }
   }
 }
 
@@ -200,27 +189,6 @@ NetDeviceTransport::receiveFromNetDevice(Ptr<NetDevice> device,
   BlockHeader header;
   packet->RemoveHeader(header);
 
-  if (!device->IsMulticast()) {
-    Block block = stripBlockHeader(header);
-    uint32_t tlv_type = block.type();
-    if (tlv_type == ::ndn::tlv::Interest) {
-      Interest i(block);
-      // Removing appended sequence number 
-      std::string prefix = i.getName().getPrefix(-1).toUri();
-      SetNextDataHop(prefix, from);
-      // AddNextDataHop(prefix, from);
-    }
-    else if (tlv_type == ::ndn::tlv::Data) {
-      // Data d(block);
-      // std::string prefix = d.getName().getPrefix(-1).toUri();
-      // // std::cout << "Data Prefix: "<< prefix << std::endl;
-
-      // TODO: Maybe do something like removing the entry when timer runs out.
-      
-    } else {
-      std::cout << "UNKNOWN TLV TYPE: " << tlv_type << std::endl; 
-    }
-  }
   this->receive(std::move(header.getBlock()));
 }
 
@@ -239,7 +207,6 @@ NetDeviceTransport::SetNextDataHop(std::string prefix, Address dest) {
   m_next_data_hops[prefix] = v;
 }
 
-
 void
 NetDeviceTransport::AddNextDataHop(std::string prefix, Address dest) {
   if (m_next_data_hops.find(prefix) == m_next_data_hops.end()) {
@@ -248,6 +215,16 @@ NetDeviceTransport::AddNextDataHop(std::string prefix, Address dest) {
     m_next_data_hops[prefix] = v;
   } else {
     m_next_data_hops[prefix].insert(dest);
+  }
+}
+
+void
+NetDeviceTransport::RemoveNextDataHop(std::string prefix, Address dest) {
+  if (m_next_data_hops.find(prefix) != m_next_data_hops.end()) {
+    auto it = m_next_data_hops[prefix].find(dest);
+    if (it != m_next_data_hops[prefix].end()) {
+      m_next_data_hops[prefix].erase(it);
+    }
   }
 }
 

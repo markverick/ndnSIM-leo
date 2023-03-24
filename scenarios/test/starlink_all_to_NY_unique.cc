@@ -19,8 +19,9 @@ public:
       ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
       consumerHelper.SetAttribute("Frequency", StringValue("1"));
       consumerHelper.SetPrefix(m_prefix);
-      consumerHelper.SetAttribute("StartSeq", StringValue("0"));
-      consumerHelper.Install(consumerNode).Start(Seconds(i + 1));
+      consumerHelper.SetAttribute("StartSeq", StringValue(to_string(i*1000)));
+      consumerHelper.SetAttribute("MaxSeq", StringValue(to_string(i*1000+1)));
+      consumerHelper.Install(consumerNode).Start(Seconds(i*2));
     }
 
     // Producer
@@ -35,7 +36,7 @@ public:
     ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
 
     cout << "Starting the simulation"  << endl;
-    Simulator::Stop(Seconds(200));
+    Simulator::Stop(Seconds(220));
 
     Simulator::Run();
     Simulator::Destroy();

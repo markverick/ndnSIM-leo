@@ -18,7 +18,7 @@ public:
     ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
     // Consumer will request /prefix/0, /prefix/1, ...
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("Frequency", StringValue("100"));
+    consumerHelper.SetAttribute("Frequency", StringValue("1"));
     consumerHelper.Install(node1).Start(Seconds(1)); // first node
 
     // Producer
@@ -33,18 +33,18 @@ public:
     ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
 
     cout << "Starting the simulation"  << endl;
-    Simulator::Stop(Seconds(200));
+    Simulator::Stop(Seconds(500));
 
     Simulator::Run();
     Simulator::Destroy();
   }
 };
 }
-// NS_LOG=ndn.Consumer ./waf --run=a_b_starlink_BJ_NY_loss |& tee -a logs/ndn_ping_1s_for_500.txt
+// NS_LOG=ndn.Consumer ./waf --run=a_b_starlink_BJ_NY_ping_static |& tee -a logs/ndn-p2p-static-01.txt
 int
 main(int argc, char* argv[])
 {
-  string ns3_config = "scenarios/config/a_b_starlink.properties";
+  string ns3_config = "scenarios/config/a_b_starlink_static.properties";
   ns3::ScenarioSim sim = ns3::ScenarioSim(ns3_config);
   sim.Run();
   return 0;

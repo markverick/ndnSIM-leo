@@ -18,7 +18,7 @@ public:
     ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
     // Consumer will request /prefix/0, /prefix/1, ...
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("Frequency", StringValue("100"));
+    consumerHelper.SetAttribute("Frequency", StringValue("1"));
     consumerHelper.Install(node1).Start(Seconds(1)); // first node
 
     // Producer
@@ -33,7 +33,7 @@ public:
     ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
 
     cout << "Starting the simulation"  << endl;
-    Simulator::Stop(Seconds(200));
+    Simulator::Stop(Seconds(3));
 
     Simulator::Run();
     Simulator::Destroy();
@@ -44,7 +44,7 @@ public:
 int
 main(int argc, char* argv[])
 {
-  string ns3_config = "scenarios/config/a_b_starlink.properties";
+  string ns3_config = "scenarios/config/a_b_3nodes_gsl_change.properties";
   ns3::ScenarioSim sim = ns3::ScenarioSim(ns3_config);
   sim.Run();
   return 0;
