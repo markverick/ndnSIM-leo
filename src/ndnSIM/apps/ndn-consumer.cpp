@@ -115,6 +115,9 @@ Consumer::CheckRetxTimeout()
   Time rto = m_rtt->RetransmitTimeout();
   // NS_LOG_DEBUG ("Current RTO: " << rto.ToDouble (Time::S) << "s");
 
+  // if (!m_seqTimeouts.empty()) {
+  //   m_seqTimeouts.clear();
+  // }
   while (!m_seqTimeouts.empty()) {
     SeqTimeoutsContainer::index<i_timestamp>::type::iterator entry =
       m_seqTimeouts.get<i_timestamp>().begin();
@@ -225,7 +228,7 @@ Consumer::OnData(shared_ptr<const Data> data)
   uint32_t seq = data->getName().at(-1).toSequenceNumber();
   NS_LOG_INFO("< DATA for " << seq);
   // if (seq % 1000 == 0) {
-  //   std::cout << Now().GetNanoSeconds() << "," << seq << std::endl;
+  std::cout << Now().GetNanoSeconds() << ", " << seq * 1380 << std::endl;
   // }
 
   int hopCount = 0;

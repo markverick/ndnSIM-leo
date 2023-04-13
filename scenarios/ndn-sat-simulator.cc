@@ -286,6 +286,10 @@ void NDNSatSimulator::ReadISLs()
     std::cout << "    >> Created " << std::to_string(counter) << " ISL(s)" << std::endl;
 }
 
+void RemoveNextDataHop(ns3::ndn::NetDeviceTransport* ts, string prefix, Address dest) {
+  ts->RemoveNextDataHop(prefix, dest);
+}
+
 void AddRouteISL(ns3::Ptr<ns3::Node> node,
                 string prefix, ns3::Ptr<ns3::Node> otherNode,
                 int metric, shared_ptr<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, Address> >> curDataHop)
@@ -324,7 +328,8 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node,
       auto p = make_pair(node->GetId(), prefix);
       if (curDataHop->find(p) != curDataHop->end()) {
         ns3::ndn::NetDeviceTransport* ts = dynamic_cast<ns3::ndn::NetDeviceTransport*>((*curDataHop)[p].first->getTransport());
-        ts->RemoveNextDataHop(prefix, (*curDataHop)[p].second);
+        Simulator::Schedule(Seconds(1), &RemoveNextDataHop, ts, prefix, (*curDataHop)[p].second);
+        // ts->RemoveNextDataHop(prefix, (*curDataHop)[p].second);
       }
       (*curDataHop)[p] = make_pair(remoteFace, netDevice->GetAddress());
       return;
@@ -386,7 +391,8 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node,
       auto p = make_pair(node->GetId(), prefix);
       if (curDataHop->find(p) != curDataHop->end()) {
         ns3::ndn::NetDeviceTransport* ts = dynamic_cast<ns3::ndn::NetDeviceTransport*>((*curDataHop)[p].first->getTransport());
-        ts->RemoveNextDataHop(prefix, (*curDataHop)[p].second);
+        Simulator::Schedule(Seconds(1), &RemoveNextDataHop, ts, prefix, (*curDataHop)[p].second);
+        // ts->RemoveNextDataHop(prefix, (*curDataHop)[p].second);
       }
       (*curDataHop)[p] = make_pair(satFace, gsNetDevice->GetAddress());
       satTransport->AddNextDataHop(prefix, gsNetDevice->GetAddress());
@@ -399,7 +405,8 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node,
       auto p = make_pair(node->GetId(), prefix);
       if (curDataHop->find(p) != curDataHop->end()) {
         ns3::ndn::NetDeviceTransport* ts = dynamic_cast<ns3::ndn::NetDeviceTransport*>((*curDataHop)[p].first->getTransport());
-        ts->RemoveNextDataHop(prefix, (*curDataHop)[p].second);
+        Simulator::Schedule(Seconds(1), &RemoveNextDataHop, ts, prefix, (*curDataHop)[p].second);
+        // ts->RemoveNextDataHop(prefix, (*curDataHop)[p].second);
       }
       (*curDataHop)[p] = make_pair(gsFace, satNetDevice->GetAddress());
       gsTransport->AddNextDataHop(prefix, satNetDevice->GetAddress());

@@ -15,17 +15,18 @@ public:
     m_prefix = prefix2;
     // cout << "PREFIX: " << prefix2 << endl;
     // Consumer
-    ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
+    ndn::AppHelper consumerHelper("ns3::ndn::ConsumerWindow");
     // Consumer will request /prefix/0, /prefix/1, ...
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("Frequency", StringValue("100"));
+    consumerHelper.SetAttribute("PayloadSize", StringValue("1380"));
+    consumerHelper.SetAttribute("Window", StringValue("1"));
     consumerHelper.Install(node1).Start(Seconds(1)); // first node
 
     // Producer
     ndn::AppHelper producerHelper("ns3::ndn::Producer");
     // Producer will reply to all requests starting with /prefix
     producerHelper.SetPrefix(m_prefix);
-    producerHelper.SetAttribute("PayloadSize", StringValue("0"));
+    producerHelper.SetAttribute("PayloadSize", StringValue("1380"));
     producerHelper.Install(node2).Start(Seconds(1)); // last node
 
     cout << "Setting up FIB schedules..."  << endl;
@@ -40,7 +41,8 @@ public:
   }
 };
 }
-// NS_LOG=ndn.Consumer ./waf --run=a_b_starlink_BJ_NY_loss |& tee -a logs/ndn_ping_1s_for_500.txt
+// NS_LOG=ndn.Consumer ./waf --run=a_b_starlink_BJ_NY_w1 |& tee -a logs/window/ndn-w1-02.txt
+// NS_LOG=ndn.Consumer ./waf --run=a_b_starlink_BJ_NY_window |& tee -a logs/ndn_window_ll_10.txt
 int
 main(int argc, char* argv[])
 {

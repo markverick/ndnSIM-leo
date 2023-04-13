@@ -187,7 +187,7 @@ ConsumerWindow::OnData(shared_ptr<const Data> contentObject)
 {
   Consumer::OnData(contentObject);
 
-  m_window = m_window + 1;
+  // m_window = m_window + 1;
 
   if (m_inFlight > static_cast<uint32_t>(0))
     m_inFlight--;
