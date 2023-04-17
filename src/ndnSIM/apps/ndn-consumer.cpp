@@ -163,7 +163,7 @@ Consumer::SendPacket()
 {
   if (!m_active)
     return;
-
+  // std::cout << m_retxSeqs.size() << std::endl;
   NS_LOG_FUNCTION_NOARGS();
 
   uint32_t seq = std::numeric_limits<uint32_t>::max(); // invalid

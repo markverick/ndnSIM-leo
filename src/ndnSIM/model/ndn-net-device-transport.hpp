@@ -63,6 +63,9 @@ public:
   void
   RemoveNextDataHop(std::string prefix, Address dest);
 
+  void
+  ClearNextDataHop(std::string prefix, Address dest);
+
   Ptr<NetDevice>
   GetNetDevice() const;
 

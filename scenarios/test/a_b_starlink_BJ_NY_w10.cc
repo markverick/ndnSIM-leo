@@ -20,6 +20,7 @@ public:
     consumerHelper.SetPrefix(m_prefix);
     consumerHelper.SetAttribute("PayloadSize", StringValue("1380"));
     consumerHelper.SetAttribute("Window", StringValue("10"));
+    consumerHelper.SetAttribute("RetxTimer", StringValue("1s"));
     consumerHelper.Install(node1).Start(Seconds(1)); // first node
 
     // Producer

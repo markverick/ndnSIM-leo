@@ -228,6 +228,13 @@ NetDeviceTransport::RemoveNextDataHop(std::string prefix, Address dest) {
   }
 }
 
+void
+NetDeviceTransport::ClearNextDataHop(std::string prefix, Address dest) {
+  if (m_next_data_hops.find(prefix) != m_next_data_hops.end()) {
+      m_next_data_hops[prefix].clear();
+  }
+}
+
 Ptr<NetDevice>
 NetDeviceTransport::GetNetDevice() const
 {

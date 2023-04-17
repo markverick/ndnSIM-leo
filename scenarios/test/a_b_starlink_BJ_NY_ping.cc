@@ -18,7 +18,7 @@ public:
     ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
     // Consumer will request /prefix/0, /prefix/1, ...
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("Frequency", StringValue("100"));
+    consumerHelper.SetAttribute("Frequency", StringValue("0.1"));
     consumerHelper.Install(node1).Start(Seconds(1)); // first node
 
     // Producer
@@ -40,7 +40,7 @@ public:
   }
 };
 }
-// NS_LOG=ndn.Consumer ./waf --run=a_b_starlink_BJ_NY_loss |& tee -a logs/ndn_ping_1s_for_500.txt
+// NS_LOG=ndn.Consumer:ndn.Producer ./waf --run=a_b_starlink_BJ_NY_ping |& tee -a logs/ndn_ping_loss_01.txt
 int
 main(int argc, char* argv[])
 {
