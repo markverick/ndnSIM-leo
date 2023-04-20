@@ -161,11 +161,10 @@ NetDeviceTransport::doSend(const Block& packet)
     else if (tlv_type == ::ndn::tlv::Data) {
       Data d(block);
       std::string prefix = d.getName().getPrefix(-1).toUri();
-      if (m_next_data_hops.find(prefix) != m_next_data_hops.end()) {
-        for (Address addr : m_next_data_hops[prefix]) {
-          netDevice->Send(ns3Packet->Copy(), addr,
-                        L3Protocol::ETHERNET_FRAME_TYPE);
-        }
+      for (auto it = m_next_data_hops.begin(); it != m_next_data_hops.end(); it++) {
+        if (it->second > 0)
+          netDevice->Send(ns3Packet->Copy(), it->first,
+                      L3Protocol::ETHERNET_FRAME_TYPE);
       }
     } else {
       std::cout << "UNKNOWN TLV TYPE: " << tlv_type << std::endl; 
@@ -198,40 +197,40 @@ NetDeviceTransport::SetNextInterestHop(std::string prefix, Address dest) {
 }
 
 void
-NetDeviceTransport::SetNextDataHop(std::string prefix, Address dest) {
-  std::set<Address> v;
-  v.insert(dest);
-  if (m_next_data_hops.find(prefix) != m_next_data_hops.end()) {
-    m_next_data_hops[prefix].clear();
-  }
-  m_next_data_hops[prefix] = v;
+NetDeviceTransport::SetNextDataHop(Address dest) {
+  m_next_data_hops.clear();
+  m_next_data_hops[dest] = 1;
 }
 
 void
-NetDeviceTransport::AddNextDataHop(std::string prefix, Address dest) {
-  if (m_next_data_hops.find(prefix) == m_next_data_hops.end()) {
-    std::set<Address> v;
-    v.insert(dest);
-    m_next_data_hops[prefix] = v;
+NetDeviceTransport::AddNextDataHop(Address dest) {
+  auto it = m_next_data_hops.find(dest);
+  if (it != m_next_data_hops.end()) {
+    m_next_data_hops[dest] += 1;
   } else {
-    m_next_data_hops[prefix].insert(dest);
+    m_next_data_hops[dest] = 1;
   }
 }
 
 void
-NetDeviceTransport::RemoveNextDataHop(std::string prefix, Address dest) {
-  if (m_next_data_hops.find(prefix) != m_next_data_hops.end()) {
-    auto it = m_next_data_hops[prefix].find(dest);
-    if (it != m_next_data_hops[prefix].end()) {
-      m_next_data_hops[prefix].erase(it);
+NetDeviceTransport::RemoveNextDataHop(Address dest) {
+  auto it = m_next_data_hops.find(dest);
+  if (it != m_next_data_hops.end()) {
+    m_next_data_hops[dest] -= 1;
+    if (m_next_data_hops[dest] == 0) {
+      m_next_data_hops.erase(dest);
     }
+  } else {
+    std::cout << "  NEGATIVE HOP COUNTS" << std::endl;
+    m_next_data_hops[dest] = -1;
   }
 }
 
 void
-NetDeviceTransport::ClearNextDataHop(std::string prefix, Address dest) {
-  if (m_next_data_hops.find(prefix) != m_next_data_hops.end()) {
-      m_next_data_hops[prefix].clear();
+NetDeviceTransport::ClearNextDataHop(Address dest) {
+  auto it = m_next_data_hops.find(dest);
+  if (it != m_next_data_hops.end()) {
+    m_next_data_hops.erase(dest);
   }
 }
 

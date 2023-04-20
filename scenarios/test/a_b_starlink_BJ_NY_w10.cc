@@ -7,6 +7,7 @@ class ScenarioSim : public NDNSatSimulator {
 public:
   using NDNSatSimulator::NDNSatSimulator;
   void Run() {
+    double simulation_seconds = 200;
     std::string prefix = "/prefix/uid-";
     Ptr<Node> node1 = m_allNodes.Get(m_node1_id);
     Ptr<Node> node2 = m_allNodes.Get(m_node2_id);
@@ -32,10 +33,10 @@ public:
 
     cout << "Setting up FIB schedules..."  << endl;
 
-    ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
+    ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir, simulation_seconds);
 
     cout << "Starting the simulation"  << endl;
-    Simulator::Stop(Seconds(500));
+    Simulator::Stop(Seconds(simulation_seconds));
 
     Simulator::Run();
     Simulator::Destroy();
@@ -44,7 +45,7 @@ public:
 }
 // NS_LOG=ndn.Consumer ./waf --run=a_b_starlink_BJ_NY_w10 |& tee -a logs/window/ndn-w10-04.txt
 // NS_LOG=ndn.Consumer ./waf --run=a_b_starlink_BJ_NY_window |& tee -a logs/ndn_window_ll_10.txt
-// ./waf --run=a_b_starlink_BJ_NY_w10 |& tee -a logs/ndn_w10_le-7.txt
+// ./waf --run=a_b_starlink_BJ_NY_w10 |& tee -a logs/window-loss-4/ndn_w10_le-7.txt
 int
 main(int argc, char* argv[])
 {

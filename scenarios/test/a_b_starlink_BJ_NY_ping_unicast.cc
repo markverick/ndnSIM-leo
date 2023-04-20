@@ -8,8 +8,8 @@ public:
   using NDNSatSimulator::NDNSatSimulator;
   void Run() {
     std::string prefix = "/prefix/uid-";
-    Ptr<Node> node1 = m_allNodes.Get(m_node1_id);
-    Ptr<Node> node2 = m_allNodes.Get(m_node2_id);
+    Ptr<Node> node1 = m_allNodes.Get(1590);
+    Ptr<Node> node2 = m_allNodes.Get(1593);
     std::string prefix1 = prefix + to_string(m_node1_id);
     std::string prefix2 = prefix + to_string(m_node2_id);
     m_prefix = prefix2;
@@ -18,7 +18,7 @@ public:
     ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
     // Consumer will request /prefix/0, /prefix/1, ...
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("Frequency", StringValue("100"));
+    consumerHelper.SetAttribute("Frequency", StringValue("1"));
     consumerHelper.Install(node1).Start(Seconds(1)); // first node
 
     // Producer

@@ -1044,7 +1044,7 @@ def add_scenerios(bld):
                 obj = bld.create_ns3_program(os.path.splitext(filename)[0], all_modules)
                 obj.source = [
                     f,
-                    'scenarios/ndn-sat-simulator.cc'
+                    'scenarios/ndn-sat-simulator.cc',
                 ]
     except OSError:
         return

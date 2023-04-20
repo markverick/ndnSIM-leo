@@ -278,8 +278,8 @@ Consumer::OnTimeout(uint32_t sequenceNumber)
   m_rtt->IncreaseMultiplier(); // Double the next RTO
   m_rtt->SentSeq(SequenceNumber32(sequenceNumber),
                  1); // make sure to disable RTT calculation for this sample
-  m_retxSeqs.insert(sequenceNumber);
-  ScheduleNextPacket();
+  // m_retxSeqs.insert(sequenceNumber);
+  // ScheduleNextPacket();
 }
 
 void

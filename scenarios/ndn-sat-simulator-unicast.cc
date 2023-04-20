@@ -39,11 +39,11 @@
 #include "ns3/ipv4.h"
 #include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
 #include "ns3/ndn-leo-stack-helper.h"
-#include "ndn-sat-simulator.h"
+#include "ndn-sat-simulator-unicast.h"
 
 namespace ns3 {
 
-NDNSatSimulator::NDNSatSimulator(string config) {
+NDNSatSimulatorUnicast::NDNSatSimulatorUnicast(string config) {
   ReadConfig(config);
   // setting default parameters for PointToPoint links and channels
   Config::SetDefault("ns3::PointToPointNetDevice::DataRate", StringValue("1Mbps"));
@@ -92,14 +92,14 @@ NDNSatSimulator::NDNSatSimulator(string config) {
   std::cout << "  > Installing forwarding strategy" << std::endl;
   ndn::StrategyChoiceHelper::Install(m_allNodes, "/prefix", "/localhost/nfd/strategy/best-route");
 }
-std::string NDNSatSimulator::getConfigParamOrDefault(std::string key, std::string default_value) {
+std::string NDNSatSimulatorUnicast::getConfigParamOrDefault(std::string key, std::string default_value) {
   auto it = m_config.find(key);
   if (it != m_config.end())
     return it->second;
   return default_value;
 }
 
-void NDNSatSimulator::ReadConfig(std::string conf) {
+void NDNSatSimulatorUnicast::ReadConfig(std::string conf) {
   // Read the config
   m_config = read_config(conf);
   m_satellite_network_dir = getConfigParamOrDefault("satellite_network_dir", "network_dir");
@@ -117,7 +117,7 @@ void NDNSatSimulator::ReadConfig(std::string conf) {
   printf("\n");
 }
 
-void NDNSatSimulator::ReadSatellites()
+void NDNSatSimulatorUnicast::ReadSatellites()
 {
   // Open file
   std::ifstream fs;
@@ -182,7 +182,7 @@ void NDNSatSimulator::ReadSatellites()
   fs.close();
 }
 
-void NDNSatSimulator::ReadGroundStations()
+void NDNSatSimulatorUnicast::ReadGroundStations()
 {
   // Create a new file stream to open the file
   std::ifstream fs;
@@ -229,7 +229,7 @@ void NDNSatSimulator::ReadGroundStations()
   fs.close();
 }
 
-void NDNSatSimulator::ReadISLs()
+void NDNSatSimulatorUnicast::ReadISLs()
 {
 
     // Link helper
@@ -286,9 +286,9 @@ void NDNSatSimulator::ReadISLs()
     std::cout << "    >> Created " << std::to_string(counter) << " ISL(s)" << std::endl;
 }
 
-void RemoveNextDataHop(ns3::ndn::NetDeviceTransport* ts, Address dest) {
-  ts->RemoveNextDataHop(dest);
-}
+// void RemoveNextDataHop(ns3::ndn::NetDeviceTransport* ts, Address dest) {
+//   ts->RemoveNextDataHop(dest);
+// }
 
 void AddRouteISL(ns3::Ptr<ns3::Node> node,
                 string prefix, ns3::Ptr<ns3::Node> otherNode,
@@ -323,16 +323,16 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node,
       ns3::ndn::FibHelper::AddRoute(node, prefix, face, metric);
 
       // Prevent old GSL from sending
-      auto p = make_pair(node->GetId(), prefix);
-      if (curDataHop->find(p) != curDataHop->end()) {
-        ns3::ndn::NetDeviceTransport* transport = dynamic_cast<ns3::ndn::NetDeviceTransport*>((*curDataHop)[p].first->getTransport());
-        ns3::ndn::NetDeviceTransport* remoteTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>((*curDataHop)[p].second->getTransport());
-        // Simulator::Schedule(Seconds(20), &RemoveNextDataHop, transport, remoteTransport->GetNetDevice()->GetAddress());
-        // Simulator::Schedule(Seconds(20), &RemoveNextDataHop, remoteTransport, transport->GetNetDevice()->GetAddress());
-        transport->RemoveNextDataHop(remoteTransport->GetNetDevice()->GetAddress());
-        // remoteTransport->RemoveNextDataHop(transport->GetNetDevice()->GetAddress());
-        curDataHop->erase(p);
-      }
+      // auto p = make_pair(node->GetId(), prefix);
+      // if (curDataHop->find(p) != curDataHop->end()) {
+      //   ns3::ndn::NetDeviceTransport* transport = dynamic_cast<ns3::ndn::NetDeviceTransport*>((*curDataHop)[p].first->getTransport());
+      //   ns3::ndn::NetDeviceTransport* remoteTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>((*curDataHop)[p].second->getTransport());
+      //   // Simulator::Schedule(Seconds(20), &RemoveNextDataHop, transport, remoteTransport->GetNetDevice()->GetAddress());
+      //   // Simulator::Schedule(Seconds(20), &RemoveNextDataHop, remoteTransport, transport->GetNetDevice()->GetAddress());
+      //   // transport->RemoveNextDataHop(remoteTransport->GetNetDevice()->GetAddress());
+      //   // remoteTransport->RemoveNextDataHop(transport->GetNetDevice()->GetAddress());
+      //   // curDataHop->erase(p);
+      // }
 
       // (*curDataHop)[p] = make_pair(remoteFace, netDevice->GetAddress());
       return;
@@ -391,14 +391,14 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node,
       ns3::ndn::FibHelper::AddRoute(node, prefix, gsFace, metric);
       gsTransport->SetNextInterestHop(prefix, satNetDevice->GetAddress());
       // Remove expired GSL link when forwarding state changes
-      auto p = make_pair(node->GetId(), prefix);
+      // auto p = make_pair(node->GetId(), prefix);
       // if (curDataHop->find(p) != curDataHop->end()) {
       //   ns3::ndn::NetDeviceTransport* ts = dynamic_cast<ns3::ndn::NetDeviceTransport*>((*curDataHop)[p].first->getTransport());
       //   // Simulator::Schedule(Seconds(1), &RemoveNextDataHop, ts, prefix, (*curDataHop)[p].second);
       //   ts->RemoveNextDataHop((*curDataHop)[p].second);
       // }
-      (*curDataHop)[p] = make_pair(gsFace, satFace);
-      satTransport->AddNextDataHop(gsNetDevice->GetAddress());
+      // (*curDataHop)[p] = make_pair(gsFace, satFace);
+      satTransport->SetNextDataHop(gsNetDevice->GetAddress());
       // gsTransport->AddNextDataHop(satNetDevice->GetAddress());
     } else {
       // sat -> gs
@@ -406,22 +406,22 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node,
       ns3::ndn::FibHelper::AddRoute(node, prefix, satFace, metric);
       satTransport->SetNextInterestHop(prefix, gsNetDevice->GetAddress());
       // Remove expired GSL link when forwarding state changes
-      auto p = make_pair(node->GetId(), prefix);
+      // auto p = make_pair(node->GetId(), prefix);
       // if (curDataHop->find(p) != curDataHop->end()) {
       //   ns3::ndn::NetDeviceTransport* ts = dynamic_cast<ns3::ndn::NetDeviceTransport*>((*curDataHop)[p].first->getTransport());
       //   // Simulator::Schedule(Seconds(1), &RemoveNextDataHop, ts, prefix, (*curDataHop)[p].second);
       //   ts->RemoveNextDataHop((*curDataHop)[p].second);
       //   // satTransport->RemoveNextDataHop(prefix, ts->GetNetDevice()->GetAddress());
       // }
-      (*curDataHop)[p] = make_pair(satFace, gsFace);
-      gsTransport->AddNextDataHop(satNetDevice->GetAddress());
+      // (*curDataHop)[p] = make_pair(satFace, gsFace);
+      gsTransport->SetNextDataHop(satNetDevice->GetAddress());
       // satTransport->AddNextDataHop(gsNetDevice->GetAddress());
       // satTransport->AddNextDataHop(gsNetDevice->GetAddress());
     }
   }
 }
 
-void NDNSatSimulator::AddGSLs() {
+void NDNSatSimulatorUnicast::AddGSLs() {
 
   // Link helper
   GSLHelper gsl_helper;
@@ -486,11 +486,11 @@ void NDNSatSimulator::AddGSLs() {
 
 }
 
-void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dname) {
+void NDNSatSimulatorUnicast::ImportDynamicStateSat(ns3::NodeContainer nodes, string dname) {
   ImportDynamicStateSat(nodes, dname, -1);
 }
 
-void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, double limit) {
+void NDNSatSimulatorUnicast::ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, double limit) {
   // Construct a  link inference from dynamic state
   m_cur_data_hop = make_shared<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>> > > ();
   // Iterate through the dynamic state directory
@@ -533,7 +533,8 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
           prefix = "/prefix/uid-" + result[1];
 
           if (current_node >= m_satelliteNodes.GetN() || next_hop >= m_satelliteNodes.GetN()) {
-            ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node),
+            if (prefix.compare("/prefix/uid-1593"))
+              ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node),
                                     prefix, nodes.Get(next_hop), 1, m_cur_data_hop);
           } else {
             ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteISL, nodes.Get(current_node),

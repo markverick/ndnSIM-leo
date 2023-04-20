@@ -1,5 +1,5 @@
-#ifndef NDN_SAT_SIMULATOR_H
-#define NDN_SAT_SIMULATOR_H
+#ifndef NDN_SAT_SIMULATOR_UNICAST_H
+#define NDN_SAT_SIMULATOR_UNICAST_H
 
 #include <utility>
 #include <filesystem>
@@ -45,10 +45,10 @@
 
 namespace ns3 {
 
-class NDNSatSimulator {
+class NDNSatSimulatorUnicast {
 public:
 
-  NDNSatSimulator(string config);
+  NDNSatSimulatorUnicast(string config);
 
   void Run();
 

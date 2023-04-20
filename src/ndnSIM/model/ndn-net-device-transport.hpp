@@ -55,16 +55,16 @@ public:
   SetNextInterestHop(std::string prefix, Address dest);
 
   void
-  SetNextDataHop(std::string prefix, Address dest);
+  SetNextDataHop(Address dest);
 
   void
-  AddNextDataHop(std::string prefix, Address dest);
+  AddNextDataHop(Address dest);
 
   void
-  RemoveNextDataHop(std::string prefix, Address dest);
+  RemoveNextDataHop(Address dest);
 
   void
-  ClearNextDataHop(std::string prefix, Address dest);
+  ClearNextDataHop(Address dest);
 
   Ptr<NetDevice>
   GetNetDevice() const;
@@ -90,7 +90,8 @@ private:
   Ptr<Node> m_node;
 
   std::map<std::string, Address> m_next_interest_hop;
-  std::map<std::string, std::set<Address> > m_next_data_hops;
+  // std::map<std::string, std::set<Address> > m_next_data_hops;
+  std::map<Address, uint16_t> m_next_data_hops;
 };
 
 } // namespace ndn
