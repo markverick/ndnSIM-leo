@@ -58,6 +58,7 @@ FibHelper::AddNextHop(const ControlParameters& parameters, Ptr<Node> node)
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   command->setCanBePrefix(false);
+  command->setMustBeFresh(true);
   StackHelper::getKeyChain().sign(*command);
 
   Ptr<L3Protocol> l3protocol = node->GetObject<L3Protocol>();
@@ -75,6 +76,7 @@ FibHelper::RemoveNextHop(const ControlParameters& parameters, Ptr<Node> node)
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   command->setCanBePrefix(false);
+  command->setMustBeFresh(true);
   StackHelper::getKeyChain().sign(*command);
 
   Ptr<L3Protocol> l3protocol = node->GetObject<L3Protocol>();

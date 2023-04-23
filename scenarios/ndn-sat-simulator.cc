@@ -90,8 +90,9 @@ NDNSatSimulator::NDNSatSimulator(string config) {
 
   // Choosing forwarding strategy
   std::cout << "  > Installing forwarding strategy" << std::endl;
-  ndn::StrategyChoiceHelper::Install(m_allNodes, "/prefix", "/localhost/nfd/strategy/best-route");
+  ndn::StrategyChoiceHelper::Install(m_allNodes, "/", "/localhost/nfd/strategy/best-route");
 }
+
 std::string NDNSatSimulator::getConfigParamOrDefault(std::string key, std::string default_value) {
   auto it = m_config.find(key);
   if (it != m_config.end())
@@ -160,7 +161,7 @@ void NDNSatSimulator::ReadSatellites()
       Ptr<MobilityModel> mobModel = m_satelliteNodes.Get(counter)->GetObject<MobilityModel>();
       mobModel->SetPosition(satellite->GetPosition(satellite->GetTleEpoch()));
     } else {
-      // Dynamic
+      // Dynamic 
       mobility.SetMobilityModel(
               "ns3::SatellitePositionMobilityModel",
               "SatellitePositionHelper",
@@ -290,20 +291,29 @@ void RemoveNextDataHop(ns3::ndn::NetDeviceTransport* ts, Address dest) {
   ts->RemoveNextDataHop(dest);
 }
 
+void AddRouteCustom(ns3::Ptr<ns3::Node> node, string prefix, shared_ptr<ns3::ndn::Face> face, int32_t metric) {
+  ns3::ndn::FibHelper::AddRoute(node, prefix, face, metric);
+}
+
 void AddRouteISL(ns3::Ptr<ns3::Node> node,
                 string prefix, ns3::Ptr<ns3::Node> otherNode,
-                int metric, shared_ptr<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>> >> curDataHop)
+                int metric, shared_ptr<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>> >> curNextHop)
 {
+  // Removing existing route
+  auto p = make_pair(node->GetId(), prefix);
+  if (curNextHop->find(p) != curNextHop->end()) {
+    ns3::ndn::FibHelper::RemoveRoute(node, prefix, (*curNextHop)[p].first);
+  }
   for (uint32_t deviceId = 0; deviceId < node->GetNDevices(); deviceId++) {
-    // Remove existing route before adding the new one
-    shared_ptr<ns3::ndn::Face> f = node->GetObject<ns3::ndn::L3Protocol>()->getFaceByNetDevice(node->GetDevice(deviceId));
-    // cout << "Removing Face: " << f->getId() << " from node: " << node->GetId() << " with prefix " << prefix << endl;;
-    ns3::ndn::FibHelper::RemoveRoute(node, prefix, f);
     Ptr<PointToPointLaserNetDevice> netDevice = DynamicCast<PointToPointLaserNetDevice>(node->GetDevice(deviceId));
-    // Laser
-    Ptr<Channel> channel = netDevice->GetChannel();
-    if (channel == 0)
+    // Filtering out GSL net devices
+    if (netDevice == 0) {
       continue;
+    }
+    Ptr<Channel> channel = netDevice->GetChannel();
+    if (channel == 0) {
+      continue;
+    }
     if (channel->GetDevice(0)->GetNode() == otherNode
         || channel->GetDevice(1)->GetNode() == otherNode) {
       Ptr<PointToPointLaserNetDevice> remoteNetDevice;
@@ -320,21 +330,11 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node,
       shared_ptr<ns3::ndn::Face> remoteFace = remoteNdn->getFaceByNetDevice(remoteNetDevice);
       NS_ASSERT_MSG(face != 0, "There is no face associated with the p2p link");
 
+      // cout << " Add Route: " << node->GetId() << "," << prefix << "," << otherNode->GetId() << "," << face->getId() << endl;
       ns3::ndn::FibHelper::AddRoute(node, prefix, face, metric);
-
-      // Prevent old GSL from sending
+      // Add the current route for future removal
       auto p = make_pair(node->GetId(), prefix);
-      if (curDataHop->find(p) != curDataHop->end()) {
-        ns3::ndn::NetDeviceTransport* transport = dynamic_cast<ns3::ndn::NetDeviceTransport*>((*curDataHop)[p].first->getTransport());
-        ns3::ndn::NetDeviceTransport* remoteTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>((*curDataHop)[p].second->getTransport());
-        // Simulator::Schedule(Seconds(20), &RemoveNextDataHop, transport, remoteTransport->GetNetDevice()->GetAddress());
-        // Simulator::Schedule(Seconds(20), &RemoveNextDataHop, remoteTransport, transport->GetNetDevice()->GetAddress());
-        transport->RemoveNextDataHop(remoteTransport->GetNetDevice()->GetAddress());
-        // remoteTransport->RemoveNextDataHop(transport->GetNetDevice()->GetAddress());
-        curDataHop->erase(p);
-      }
-
-      // (*curDataHop)[p] = make_pair(remoteFace, netDevice->GetAddress());
+      (*curNextHop)[p] = make_pair(face, remoteFace);
       return;
     }
   }
@@ -342,8 +342,14 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node,
 
 void AddRouteGSL(ns3::Ptr<ns3::Node> node,
                 string prefix, ns3::Ptr<ns3::Node> otherNode,
-                int metric, shared_ptr<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>> >> curDataHop)
+                int metric, shared_ptr<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>> >> curNextHop)
 {
+  // Removing existing route
+  auto p = make_pair(node->GetId(), prefix);
+  if (curNextHop->find(p) != curNextHop->end()) {
+    ns3::ndn::FibHelper::RemoveRoute(node, prefix, (*curNextHop)[p].first);
+  }
+
   ns3::Ptr<ns3::Node> gsNode;
   ns3::Ptr<ns3::Node> satNode;
   // src node is satellite
@@ -363,60 +369,46 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node,
   NS_ASSERT_MSG(gsFace != 0, "There is no face associated with the gsl link");
   ns3::ndn::NetDeviceTransport* gsTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>(gsFace->getTransport());
   NS_ASSERT_MSG(gsTransport != 0, "There is no valid transport associated with the ground station face");
-
+  
   for (uint32_t deviceId = 0; deviceId < satNode->GetNDevices(); deviceId++) {
-    // Removing any existing ISL FIBs
-    if (node != gsNode) {
-      shared_ptr<ns3::ndn::Face> f = satNode->GetObject<ns3::ndn::L3Protocol>()->getFaceByNetDevice(satNode->GetDevice(deviceId));
-      ns3::ndn::FibHelper::RemoveRoute(node, prefix, f);
-    }
+    // Filtering out ISL devices
     Ptr<GSLNetDevice> satNetDevice = DynamicCast<GSLNetDevice>(satNode->GetDevice(deviceId));
-    if (satNetDevice == 0)
+    if (satNetDevice == 0) {
       continue;
+    }
     Ptr<Channel> channel = satNetDevice->GetChannel();
-    if (channel == 0)
+    if (channel == 0) {
       continue;
+    }
 
     // Get Sat Information
     Ptr<ns3::ndn::L3Protocol> satNdn = satNode->GetObject<ns3::ndn::L3Protocol>();
     NS_ASSERT_MSG(satNdn != 0, "Ndn stack should be installed on the satellite node");
     shared_ptr<ns3::ndn::Face> satFace = satNdn->getFaceByNetDevice(satNetDevice);
     NS_ASSERT_MSG(satFace != 0, "There is no face associated with the gsl link");
-    // TODO: Maybe unsafe pointer, fix later
     ns3::ndn::NetDeviceTransport* satTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>(satFace->getTransport());
     NS_ASSERT_MSG(satTransport != 0, "There is no valid transport associated with the ground station face");
-  
+    auto p = make_pair(node->GetId(), prefix);
     if (node == gsNode) {
       // gs -> sat
       ns3::ndn::FibHelper::AddRoute(node, prefix, gsFace, metric);
+      // Add the current route for future removal
+      (*curNextHop)[p] = make_pair(satFace, gsFace);
       gsTransport->SetNextInterestHop(prefix, satNetDevice->GetAddress());
-      // Remove expired GSL link when forwarding state changes
-      auto p = make_pair(node->GetId(), prefix);
-      // if (curDataHop->find(p) != curDataHop->end()) {
-      //   ns3::ndn::NetDeviceTransport* ts = dynamic_cast<ns3::ndn::NetDeviceTransport*>((*curDataHop)[p].first->getTransport());
-      //   // Simulator::Schedule(Seconds(1), &RemoveNextDataHop, ts, prefix, (*curDataHop)[p].second);
-      //   ts->RemoveNextDataHop((*curDataHop)[p].second);
-      // }
-      (*curDataHop)[p] = make_pair(gsFace, satFace);
-      satTransport->AddNextDataHop(gsNetDevice->GetAddress());
-      // gsTransport->AddNextDataHop(satNetDevice->GetAddress());
+      if (prefix.compare("/prefix/uid-1593") == 0 && node->GetId() == 1590) {
+        // satTransport->SetNextDataHop(gsNetDevice->GetAddress());
+        satTransport->SetNextDataHop(gsNetDevice->GetAddress());
+      }
+      if (prefix.compare("/prefix/uid-1590") == 0 && node->GetId() == 1593) {
+        // satTransport->SetNextDataHop(gsNetDevice->GetAddress());
+        gsTransport->SetNextDataHop(satNetDevice->GetAddress());
+      }
     } else {
       // sat -> gs
-      // cout << "SAT->GS: " << deviceId << "," << satNetDevice->GetAddress() << " -> " << gsNetDevice->GetAddress() << endl;
       ns3::ndn::FibHelper::AddRoute(node, prefix, satFace, metric);
+      // Add the current route for future removal
+      (*curNextHop)[p] = make_pair(satFace, gsFace);
       satTransport->SetNextInterestHop(prefix, gsNetDevice->GetAddress());
-      // Remove expired GSL link when forwarding state changes
-      auto p = make_pair(node->GetId(), prefix);
-      // if (curDataHop->find(p) != curDataHop->end()) {
-      //   ns3::ndn::NetDeviceTransport* ts = dynamic_cast<ns3::ndn::NetDeviceTransport*>((*curDataHop)[p].first->getTransport());
-      //   // Simulator::Schedule(Seconds(1), &RemoveNextDataHop, ts, prefix, (*curDataHop)[p].second);
-      //   ts->RemoveNextDataHop((*curDataHop)[p].second);
-      //   // satTransport->RemoveNextDataHop(prefix, ts->GetNetDevice()->GetAddress());
-      // }
-      (*curDataHop)[p] = make_pair(satFace, gsFace);
-      gsTransport->AddNextDataHop(satNetDevice->GetAddress());
-      // satTransport->AddNextDataHop(gsNetDevice->GetAddress());
-      // satTransport->AddNextDataHop(gsNetDevice->GetAddress());
     }
   }
 }
@@ -490,56 +482,74 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
   ImportDynamicStateSat(nodes, dname, -1);
 }
 
+void printFibTable(Ptr<Node> node) {
+  cout << "Node: " << node->GetId() << endl;
+  Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
+  auto fw = ndn->getForwarder();
+  auto &fib = fw->getFib();
+  for (auto it = fib.begin(); it != fib.end(); it++) {
+    for (auto i = it->getNextHops().begin(); i != it->getNextHops().end(); i++) {
+      cout << "  " << it->getPrefix() << "," << i->getFace().getId() << endl;
+    }
+  }
+}
 void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, double limit) {
   // Construct a  link inference from dynamic state
-  m_cur_data_hop = make_shared<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>> > > ();
+  m_cur_next_hop = make_shared<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>> > > ();
   // Iterate through the dynamic state directory
   int i = 0;
   std::cout << "Progress: ";
   for (const auto & entry : filesystem::directory_iterator(dname)) {
-      // Extract nanoseconds from file name
-      if (i % 100 == 0) {
-        std::cout << "|";
-      }
-      i++;
-      std::regex rgx(".*fstate_(\\w+)\\.txt.*");
-      smatch match;
-      string full_path = entry.path();
-      if (!std::regex_search(full_path, match, rgx)) continue;
-      // Check if network is forced static
-      if (m_satellite_network_force_static && match[1].compare("0")) {
-        continue; 
-      }
-      double ms = stod(match[1]) / 1000000;
-      if (limit >= 0 && ms > limit * 1000) {
-        continue;
-      } 
-      int64_t current_node;
-      // int destination_node;
-      string prefix;
-      int64_t next_hop;
+    // Extract nanoseconds from file name
+    if (i % 100 == 0) {
+      std::cout << "|";
+    }
+    i++;
+    std::regex rgx(".*fstate_(\\w+)\\.txt.*");
+    smatch match;
+    string full_path = entry.path();
+    if (!std::regex_search(full_path, match, rgx)) continue;
+    // Check if network is forced static
+    if (m_satellite_network_force_static && match[1].compare("0")) {
+      continue; 
+    }
+    double ms = stod(match[1]) / 1000000;
+    if (limit >= 0 && ms > limit * 1000) {
+      continue;
+    } 
+    int64_t current_node;
+    // int destination_node;
+    string prefix;
+    int64_t next_hop;
+    int64_t current_face;
+    int64_t next_face;
 
-      // Read each file
-      ifstream input(full_path);
-      string line;
-      while(getline(input, line))
-      {
-          vector<string> result;
-          boost::split(result, line, boost::is_any_of(","));
-          current_node = stoi(result[0]);
-          // destination_node = stoi(result[1]);
-          next_hop = stoi(result[2]);
-          // Add AddRoute schedule
-          prefix = "/prefix/uid-" + result[1];
+    // Read each file
+    ifstream input(full_path);
+    string line;
+    while(getline(input, line))
+    {
+      vector<string> result;
+      boost::split(result, line, boost::is_any_of(","));
+      current_node = stoi(result[0]);
+      // destination_node = stoi(result[1]);
+      next_hop = stoi(result[2]);
+      current_face = stoi(result[3]);
+      next_face = stoi(result[4]);
+      // Add AddRoute schedule
+      prefix = "/prefix/uid-" + result[1];
 
-          if (current_node >= m_satelliteNodes.GetN() || next_hop >= m_satelliteNodes.GetN()) {
-            ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node),
-                                    prefix, nodes.Get(next_hop), 1, m_cur_data_hop);
-          } else {
-            ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteISL, nodes.Get(current_node),
-                                    prefix, nodes.Get(next_hop), 1, m_cur_data_hop);
-          }
+      // Skip adding other routes for faster debug
+      if (stoi(result[1]) != 1590 && stoi(result[1]) != 1593) continue;
+      // cout << ms / 1000 << "Add Route: " << current_node << "," << prefix << "," << next_hop << endl;
+      if (current_node >= m_satelliteNodes.GetN() || next_hop >= m_satelliteNodes.GetN()) {
+        ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node),
+                                prefix, nodes.Get(next_hop), 1, m_cur_next_hop);
+      } else {
+        ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteISL, nodes.Get(current_node),
+                                prefix, nodes.Get(next_hop), 1, m_cur_next_hop);
       }
+    }
   }
   std::cout << std::endl;
 }

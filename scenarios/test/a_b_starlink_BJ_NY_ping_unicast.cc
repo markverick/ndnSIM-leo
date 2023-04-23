@@ -7,6 +7,7 @@ class ScenarioSim : public NDNSatSimulator {
 public:
   using NDNSatSimulator::NDNSatSimulator;
   void Run() {
+    ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
     std::string prefix = "/prefix/uid-";
     Ptr<Node> node1 = m_allNodes.Get(1590);
     Ptr<Node> node2 = m_allNodes.Get(1593);
@@ -18,7 +19,7 @@ public:
     ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
     // Consumer will request /prefix/0, /prefix/1, ...
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("Frequency", StringValue("1"));
+    consumerHelper.SetAttribute("Frequency", StringValue("100"));
     consumerHelper.Install(node1).Start(Seconds(1)); // first node
 
     // Producer
@@ -30,8 +31,6 @@ public:
 
     cout << "Setting up FIB schedules..."  << endl;
 
-    ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
-
     cout << "Starting the simulation"  << endl;
     Simulator::Stop(Seconds(500));
 
@@ -42,7 +41,7 @@ public:
 }
 // NS_LOG=ndn.Consumer:ndn.Producer ./waf --run=a_b_starlink_BJ_NY_ping |& tee -a logs/ndn_ping_loss_01.txt
 
-// NS_LOG=ndn.Consumer:ndn.Producer ./waf --run=a_b_starlink_BJ_NY_ping |& tee -a logs/ping-multicast/instant-remove.txt
+// NS_LOG=ndn.Consumer:ndn.Producer ./waf --run=a_b_starlink_BJ_NY_ping_unicast |& tee -a logs/ping-multicast/instant-remove-49.txt
 int
 main(int argc, char* argv[])
 {

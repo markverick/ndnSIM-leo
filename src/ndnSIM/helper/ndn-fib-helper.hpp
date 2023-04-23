@@ -110,6 +110,10 @@ public:
   static void
   RemoveRoute(Ptr<Node> node, const Name& prefix, shared_ptr<Face> face);
 
+  // A hack to make duplicate FIB manager commands unique
+  static void
+  RemoveRoute(Ptr<Node> node, const Name& prefix, shared_ptr<Face> face, int32_t metric);
+
   /**
    * \brief remove forwarding entry in FIB
    *

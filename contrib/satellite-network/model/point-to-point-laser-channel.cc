@@ -91,7 +91,7 @@ PointToPointLaserChannel::TransmitStart (
   Ptr<Node> node_other_end,
   Time txTime)
 {
-  std::cout << "ISL: " << src->GetNode()->GetId() << " -> " << node_other_end->GetId() << std::endl;
+  // std::cout << "ISL: " << src->GetNode()->GetId() << " -> " << node_other_end->GetId() << std::endl;
   NS_LOG_FUNCTION (this << p << src);
   NS_LOG_LOGIC ("UID is " << p->GetUid () << ")");
 

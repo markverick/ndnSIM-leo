@@ -187,6 +187,18 @@ NetDeviceTransport::receiveFromNetDevice(Ptr<NetDevice> device,
 
   BlockHeader header;
   packet->RemoveHeader(header);
+  // std::cout << device->GetAddress() << "," << from << "," << to << std::endl;
+  // Dynamic unicast GSL hop
+  // Block block = stripBlockHeader(header);
+  // uint32_t tlv_type = block.type();
+  // if (tlv_type == ::ndn::tlv::Interest) {
+  //   Interest i(block);
+  //   std::string prefix = i.getName().getPrefix(-1).toUri();
+  //   if (prefix.compare("/prefix/uid-1593") == 0) {
+  //     SetNextDataHop(from);
+  //   }
+  // }
+  // End dynamic unicast GSL hop
 
   this->receive(std::move(header.getBlock()));
 }
