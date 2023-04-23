@@ -71,6 +71,11 @@ public:
   void ImportDynamicStateSat(ns3::NodeContainer nodes, string dname);
 
   void ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, double limit);
+  
+  void ImportDynamicStateSatGSLUnicast(ns3::NodeContainer nodes, string dname, int src, int dst);
+
+  void ImportDynamicStateSatGSLUnicast(ns3::NodeContainer nodes, string dname, int src, int dst, double limit);
+
   // Input
   std::string m_satellite_network_dir;          //<! Directory containing satellite network information
   std::string m_satellite_network_routes_dir;   //<! Directory containing the routes over time of the network

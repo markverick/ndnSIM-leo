@@ -395,14 +395,8 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node,
       // Add the current route for future removal
       (*curNextHop)[p] = make_pair(satFace, gsFace);
       gsTransport->SetNextInterestHop(prefix, satNetDevice->GetAddress());
-      if (prefix.compare("/prefix/uid-1593") == 0 && node->GetId() == 1590) {
-        // satTransport->SetNextDataHop(gsNetDevice->GetAddress());
-        satTransport->SetNextDataHop(gsNetDevice->GetAddress());
-      }
-      if (prefix.compare("/prefix/uid-1590") == 0 && node->GetId() == 1593) {
-        // satTransport->SetNextDataHop(gsNetDevice->GetAddress());
-        gsTransport->SetNextDataHop(satNetDevice->GetAddress());
-      }
+      satTransport->SetNextDataHop(gsNetDevice->GetAddress());
+      gsTransport->SetNextDataHop(satNetDevice->GetAddress());
     } else {
       // sat -> gs
       ns3::ndn::FibHelper::AddRoute(node, prefix, satFace, metric);
@@ -553,6 +547,81 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
   }
   std::cout << std::endl;
 }
+void NDNSatSimulator::ImportDynamicStateSatGSLUnicast(ns3::NodeContainer nodes, string dname, int src, int dst) {
+  ImportDynamicStateSatGSLUnicast(nodes, dname, src, dst, -1);
+}
+void NDNSatSimulator::ImportDynamicStateSatGSLUnicast(ns3::NodeContainer nodes, string dname, int src, int dst, double limit) {
+  // Construct a  link inference from dynamic state
+  m_cur_next_hop = make_shared<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>> > > ();
+  // Iterate through the dynamic state directory
+  int i = 0;
+  std::cout << "Progress: ";
+  for (const auto & entry : filesystem::directory_iterator(dname)) {
+    // Extract nanoseconds from file name
+    if (i % 100 == 0) {
+      std::cout << "|";
+    }
+    i++;
+    std::regex rgx(".*fstate_(\\w+)\\.txt.*");
+    smatch match;
+    string full_path = entry.path();
+    if (!std::regex_search(full_path, match, rgx)) continue;
+    // Check if network is forced static
+    if (m_satellite_network_force_static && match[1].compare("0")) {
+      continue; 
+    }
+    double ms = stod(match[1]) / 1000000;
+    if (limit >= 0 && ms > limit * 1000) {
+      continue;
+    } 
+    int64_t current_node;
+    // int destination_node;
+    string prefix;
+    int64_t next_hop;
+    int64_t current_face;
+    int64_t next_face;
+
+    // Read each file
+    ifstream input(full_path);
+    string line;
+    while(getline(input, line))
+    {
+      vector<string> result;
+      boost::split(result, line, boost::is_any_of(","));
+      current_node = stoi(result[0]);
+      // destination_node = stoi(result[1]);
+      next_hop = stoi(result[2]);
+      current_face = stoi(result[3]);
+      next_face = stoi(result[4]);
+      // Add AddRoute schedule
+      prefix = "/prefix/uid-" + result[1];
+
+      // Skip adding other routes for faster debug
+      if (stoi(result[1]) != src && stoi(result[1]) != dst) continue;
+      // cout << ms / 1000 << "Add Route: " << current_node << "," << prefix << "," << next_hop << endl;
+      if (current_node >= m_satelliteNodes.GetN() || next_hop >= m_satelliteNodes.GetN()) {
+        if (current_node >= m_satelliteNodes.GetN()) {
+          if (prefix.compare("/prefix/uid-1593") == 0 && current_node == 1590) {
+            ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node),
+              prefix, nodes.Get(next_hop), 1, m_cur_next_hop);
+          }
+          else if (prefix.compare("/prefix/uid-1590") == 0 && current_node == 1593) {
+            ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node),
+              prefix, nodes.Get(next_hop), 1, m_cur_next_hop);
+          }
+        } else {
+          ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node),
+              prefix, nodes.Get(next_hop), 1, m_cur_next_hop);
+        }
+      } else {
+        ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteISL, nodes.Get(current_node),
+                                prefix, nodes.Get(next_hop), 1, m_cur_next_hop);
+      }
+    }
+  }
+  std::cout << std::endl;
+}
+
 
 
 } // namespace ns3

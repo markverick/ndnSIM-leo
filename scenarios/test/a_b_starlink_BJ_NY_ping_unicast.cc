@@ -7,13 +7,14 @@ class ScenarioSim : public NDNSatSimulator {
 public:
   using NDNSatSimulator::NDNSatSimulator;
   void Run() {
-    ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
     std::string prefix = "/prefix/uid-";
     Ptr<Node> node1 = m_allNodes.Get(1590);
     Ptr<Node> node2 = m_allNodes.Get(1593);
     std::string prefix1 = prefix + to_string(m_node1_id);
     std::string prefix2 = prefix + to_string(m_node2_id);
     m_prefix = prefix2;
+
+    ImportDynamicStateSatGSLUnicast(m_allNodes, m_satellite_network_routes_dir, 1590, 1593);
     // cout << "PREFIX: " << prefix2 << endl;
     // Consumer
     ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
