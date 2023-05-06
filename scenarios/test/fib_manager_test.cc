@@ -39,16 +39,16 @@ main(int argc, char* argv[])
 
   // Creating nodes
   NodeContainer nodes;
-  nodes.Create(6);
+  nodes.Create(5);
 
   // Connecting nodes using two links
   PointToPointHelper p2p;
   p2p.Install(nodes.Get(0), nodes.Get(1));
   p2p.Install(nodes.Get(1), nodes.Get(2));
-  p2p.Install(nodes.Get(2), nodes.Get(3));
   p2p.Install(nodes.Get(0), nodes.Get(3));
   p2p.Install(nodes.Get(3), nodes.Get(4));
-  p2p.Install(nodes.Get(4), nodes.Get(5));
+  p2p.Install(nodes.Get(4), nodes.Get(2));
+  // p2p.Install(nodes.Get(4), nodes.Get(5));
   ndn::StackHelper ndnHelper;
   ndnHelper.SetDefaultRoutes(false);
   ndnHelper.InstallAll();
@@ -59,6 +59,7 @@ main(int argc, char* argv[])
   // node->GetDevice(0);
   // ndn->getFaceByNetDevice(node->GetDevice(0));
   shared_ptr<ns3::ndn::Face> face = node->GetObject<ns3::ndn::L3Protocol>()->getFaceByNetDevice(node->GetDevice(0));
+   shared_ptr<ns3::ndn::Face> face2 = node->GetObject<ns3::ndn::L3Protocol>()->getFaceByNetDevice(node->GetDevice(1));
   // Install NDN stack on all nodes
   
 
@@ -71,9 +72,9 @@ main(int argc, char* argv[])
   ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
   // Consumer will request /prefix/0, /prefix/1, ...
   consumerHelper.SetPrefix("/prefix");
-  consumerHelper.SetAttribute("Frequency", StringValue("0.01")); // 10 interests a second
+  consumerHelper.SetAttribute("Frequency", StringValue("100")); // 10 interests a second
   auto apps = consumerHelper.Install(nodes.Get(0));                        // first node
-  apps.Stop(Seconds(1000.0)); // stop the consumer app at 10 seconds mark
+  apps.Stop(Seconds(0.0001)); // stop the consumer app at 10 MilliSeconds mark
 
   // Producer
   ndn::AppHelper producerHelper("ns3::ndn::Producer");
@@ -84,18 +85,35 @@ main(int argc, char* argv[])
 
   ndn::FibHelper::AddRoute(nodes.Get(0), "/prefix", nodes.Get(1), 1);
   ndn::FibHelper::AddRoute(nodes.Get(1), "/prefix", nodes.Get(2), 1);
-  Simulator::Schedule(Seconds(300), &RemoveRouteCustom2, nodes.Get(0), "/prefix", face);
-  Simulator::Schedule(Seconds(500), &AddRouteCustom2, nodes.Get(0), "/prefix", face, 2);
-  Simulator::Schedule(Seconds(700), &RemoveRouteCustom2, nodes.Get(0), "/prefix", face);
-  Simulator::Schedule(Seconds(900), &AddRouteCustom2, nodes.Get(0), "/prefix", face, 3);
+  // ndn::FibHelper::AddRoute(nodes.Get(0), "/prefix", nodes.Get(3), 1);
+  ndn::FibHelper::AddRoute(nodes.Get(3), "/prefix", nodes.Get(4), 1);
+  ndn::FibHelper::AddRoute(nodes.Get(4), "/prefix", nodes.Get(2), 1);
+  // for (int i = 200; i < 2000; i++) {
+
+  // }
+  // 600 works
+  // 400 does not works
+  Simulator::Schedule(MilliSeconds(200), &RemoveRouteCustom2, nodes.Get(0), "/prefix", face);
+  Simulator::Schedule(MilliSeconds(400), &AddRouteCustom2, nodes.Get(0), "/prefix", face2, 2);
+  Simulator::Schedule(MilliSeconds(600), &RemoveRouteCustom2, nodes.Get(0), "/prefix", face2);
+  Simulator::Schedule(MilliSeconds(800), &AddRouteCustom2, nodes.Get(0), "/prefix", face, 3);
+  Simulator::Schedule(MilliSeconds(1000), &RemoveRouteCustom2, nodes.Get(0), "/prefix", face);
+  Simulator::Schedule(MilliSeconds(1200), &AddRouteCustom2, nodes.Get(0), "/prefix", face2, 4);
+  // Simulator::Schedule(MilliSeconds(1400), &RemoveRouteCustom2, nodes.Get(0), "/prefix", face2);
+  // Simulator::Schedule(MilliSeconds(1600), &AddRouteCustom2, nodes.Get(0), "/prefix", face, 1);
   // Choosing forwarding strategy
 
-  Simulator::Stop(Seconds(5000.0));
-  ns3::Simulator::Schedule(ns3::Seconds(200), &printFibTable2, nodes.Get(0));
-  ns3::Simulator::Schedule(ns3::Seconds(400), &printFibTable2, nodes.Get(0));
-  ns3::Simulator::Schedule(ns3::Seconds(600), &printFibTable2, nodes.Get(0));
-  ns3::Simulator::Schedule(ns3::Seconds(800), &printFibTable2, nodes.Get(0));
-  ns3::Simulator::Schedule(ns3::Seconds(1000), &printFibTable2, nodes.Get(0));
+  Simulator::Stop(MilliSeconds(500000.0));
+  ns3::Simulator::Schedule(ns3::MilliSeconds(50), &printFibTable2, nodes.Get(0));
+  ns3::Simulator::Schedule(ns3::MilliSeconds(250), &printFibTable2, nodes.Get(0));
+  ns3::Simulator::Schedule(ns3::MilliSeconds(450), &printFibTable2, nodes.Get(0));
+  ns3::Simulator::Schedule(ns3::MilliSeconds(650), &printFibTable2, nodes.Get(0));
+  ns3::Simulator::Schedule(ns3::MilliSeconds(850), &printFibTable2, nodes.Get(0));
+  ns3::Simulator::Schedule(ns3::MilliSeconds(1050), &printFibTable2, nodes.Get(0));
+  ns3::Simulator::Schedule(ns3::MilliSeconds(1250), &printFibTable2, nodes.Get(0));
+  // ns3::Simulator::Schedule(ns3::MilliSeconds(3100), &printFibTable2, nodes.Get(0));
+  // ns3::Simulator::Schedule(ns3::MilliSeconds(6500), &printFibTable2, nodes.Get(0));
+  // ns3::Simulator::Schedule(ns3::MilliSeconds(13000), &printFibTable2, nodes.Get(0));
   Simulator::Run();
   Simulator::Destroy();
 

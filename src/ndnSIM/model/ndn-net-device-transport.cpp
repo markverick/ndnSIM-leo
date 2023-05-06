@@ -149,8 +149,11 @@ NetDeviceTransport::doSend(const Block& packet)
     uint32_t tlv_type = block.type();
     if (tlv_type == ::ndn::tlv::Interest) {
       Interest i(block);
+      // Only get the first subname
+      std::string prefix = i.getName().getSubName(0, 2).toUri();
+      // std::cout << prefix << std::endl;
       // Removing appended sequence number 
-      std::string prefix = i.getName().getPrefix(-1).toUri();
+      // std::string prefix = i.getName().getPrefix(-1).toUri();
       if (m_next_interest_hop.find(prefix) != m_next_interest_hop.end()) {
         if (m_next_interest_hop[prefix] != netDevice->GetAddress()) {
           netDevice->Send(ns3Packet, m_next_interest_hop[prefix],
@@ -160,7 +163,9 @@ NetDeviceTransport::doSend(const Block& packet)
     }
     else if (tlv_type == ::ndn::tlv::Data) {
       Data d(block);
-      std::string prefix = d.getName().getPrefix(-1).toUri();
+      std::string prefix = d.getName().getSubName(0, 2).toUri();
+      // std::cout << prefix << std::endl;
+      // std::string prefix = d.getName().getPrefix(-1).toUri();
       for (auto it = m_next_data_hops.begin(); it != m_next_data_hops.end(); it++) {
         if (it->second > 0)
           netDevice->Send(ns3Packet->Copy(), it->first,
@@ -233,7 +238,7 @@ NetDeviceTransport::RemoveNextDataHop(Address dest) {
       m_next_data_hops.erase(dest);
     }
   } else {
-    std::cout << "  NEGATIVE HOP COUNTS" << std::endl;
+    // std::cout << "  NEGATIVE HOP COUNTS" << std::endl;
     m_next_data_hops[dest] = -1;
   }
 }
@@ -244,6 +249,15 @@ NetDeviceTransport::ClearNextDataHop(Address dest) {
   if (it != m_next_data_hops.end()) {
     m_next_data_hops.erase(dest);
   }
+}
+
+bool
+NetDeviceTransport::HasNextDataHop(Address dest) {
+  auto it = m_next_data_hops.find(dest);
+  if (it != m_next_data_hops.end()) {
+    return true;
+  }
+  return false;
 }
 
 Ptr<NetDevice>

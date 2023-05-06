@@ -71,7 +71,7 @@ public:
   void ImportDynamicStateSat(ns3::NodeContainer nodes, string dname);
 
   void ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, double limit);
-  
+
   void ImportDynamicStateSatGSLUnicast(ns3::NodeContainer nodes, string dname, int src, int dst);
 
   void ImportDynamicStateSatGSLUnicast(ns3::NodeContainer nodes, string dname, int src, int dst, double limit);
@@ -91,7 +91,7 @@ public:
   std::vector<Ptr<GroundStation> > m_groundStations;  //!< Ground stations
   std::vector<Ptr<Satellite>> m_satellites;           //<! Satellites
   std::set<int64_t> m_endpoints;                      //<! Endpoint ids = ground station ids
-  std::shared_ptr<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face> > > > m_cur_next_hop;
+  std::shared_ptr<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, Address> > > m_cur_next_hop;
   std::shared_ptr<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, Address > > > m_active_hop_count;
   // std::vector<std::tuple<double, Ptr<Node>, string, Ptr<PointToPointLaserNetDevice> > > m_pending_fib;
 

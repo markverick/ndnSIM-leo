@@ -193,6 +193,7 @@ Consumer::SendPacket()
   shared_ptr<Interest> interest = make_shared<Interest>();
   interest->setNonce(m_rand->GetValue(0, std::numeric_limits<uint32_t>::max()));
   interest->setName(*nameWithSequence);
+  // std::cout << interest->getName() << std::endl;
   interest->setCanBePrefix(false);
   time::milliseconds interestLifeTime(m_interestLifeTime.GetMilliSeconds());
   interest->setInterestLifetime(interestLifeTime);
@@ -227,8 +228,8 @@ Consumer::OnData(shared_ptr<const Data> data)
   // This could be a problem......
   uint32_t seq = data->getName().at(-1).toSequenceNumber();
   NS_LOG_INFO("< DATA for " << seq);
-  // if (seq % 1000 == 0) {
-  std::cout << Now().GetNanoSeconds() << ", " << seq * 1380 << std::endl;
+  // if (seq % 1380 == 0) {
+  // std::cout << GetNode()->GetId() << "," << GetId() << "," << Now().GetNanoSeconds() << "," << seq * 1380 << std::endl;
   // }
 
   int hopCount = 0;
@@ -240,6 +241,7 @@ Consumer::OnData(shared_ptr<const Data> data)
 
   SeqTimeoutsContainer::iterator entry = m_seqLastDelay.find(seq);
   if (entry != m_seqLastDelay.end()) {
+    std::cout << GetNode()->GetId() << "," << GetId() << "," << Now().GetNanoSeconds() << "," << seq * 1380 << "," << (Simulator::Now() - entry->time).GetNanoSeconds() / 1000000.00 << std::endl;
     m_lastRetransmittedInterestDataDelay(this, seq, Simulator::Now() - entry->time, hopCount);
   }
 
@@ -278,8 +280,8 @@ Consumer::OnTimeout(uint32_t sequenceNumber)
   m_rtt->IncreaseMultiplier(); // Double the next RTO
   m_rtt->SentSeq(SequenceNumber32(sequenceNumber),
                  1); // make sure to disable RTT calculation for this sample
-  // m_retxSeqs.insert(sequenceNumber);
-  // ScheduleNextPacket();
+  m_retxSeqs.insert(sequenceNumber);
+  ScheduleNextPacket();
 }
 
 void

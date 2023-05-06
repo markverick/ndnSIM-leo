@@ -66,6 +66,9 @@ public:
   void
   ClearNextDataHop(Address dest);
 
+  bool
+  HasNextDataHop(Address dest);
+
   Ptr<NetDevice>
   GetNetDevice() const;
 

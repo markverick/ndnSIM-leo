@@ -87,7 +87,7 @@ bool
 GSLChannel::TransmitTo(Ptr<const Packet> p, Ptr<GSLNetDevice> srcNetDevice, Ptr<GSLNetDevice> destNetDevice, Time txTime, bool isSameSystem) {
 
   // Mobility models for source and destination
-  // std::cout << "GSL: " << srcNetDevice->GetNode()->GetId() << " -> " << destNetDevice->GetNode()->GetId() << std::endl;
+  std::cout << "GSL: " << srcNetDevice->GetNode()->GetId() << " -> " << destNetDevice->GetNode()->GetId() << std::endl;
 
   Ptr<MobilityModel> senderMobility = srcNetDevice->GetNode()->GetObject<MobilityModel>();
   Ptr<Node> receiverNode = destNetDevice->GetNode();

@@ -56,9 +56,11 @@ FibHelper::AddNextHop(const ControlParameters& parameters, Ptr<Node> node)
   commandName.append("add-nexthop");
   commandName.append(encodedParameters);
 
+  commandName.append("t=" + std::to_string(Simulator::Now().GetNanoSeconds()));
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   command->setCanBePrefix(false);
   command->setMustBeFresh(true);
+  // std::cout << command->getName() << std::endl;
   StackHelper::getKeyChain().sign(*command);
 
   Ptr<L3Protocol> l3protocol = node->GetObject<L3Protocol>();
@@ -72,12 +74,17 @@ FibHelper::RemoveNextHop(const ControlParameters& parameters, Ptr<Node> node)
 
   Name commandName("/localhost/nfd/fib");
   commandName.append("remove-nexthop");
+  
   commandName.append(encodedParameters);
+
+  commandName.append("t=" + std::to_string(Simulator::Now().GetNanoSeconds()));
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   command->setCanBePrefix(false);
   command->setMustBeFresh(true);
+  // std::cout << command->getName() << std::endl;
   StackHelper::getKeyChain().sign(*command);
+
 
   Ptr<L3Protocol> l3protocol = node->GetObject<L3Protocol>();
   l3protocol->injectInterest(*command);
