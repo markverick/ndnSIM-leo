@@ -46,6 +46,7 @@ public:
 // NS_LOG=ndn.Consumer ./waf --run=a_b_starlink_BJ_NY_w10 |& tee -a logs/window/ndn-w10-04.txt
 // NS_LOG=ndn.Consumer ./waf --run=a_b_starlink_BJ_NY_window |& tee -a logs/ndn_window_ll_10.txt
 // ./waf --run=a_b_starlink_BJ_NY_w10 |& tee -a logs/window-loss-4/ndn_w10_le-7.txt
+// ./waf --run=window_free |& tee -a logs/loss-nocache/ndn_w10_cs0_l0.txt
 int
 main(int argc, char* argv[])
 {

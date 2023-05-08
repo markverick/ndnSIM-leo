@@ -104,6 +104,8 @@ Producer::OnInterest(shared_ptr<const Interest> interest)
   // dataName.append(m_postfix);
   // dataName.appendVersion();
 
+  // std::cout << interest->getName().toUri() << std::endl;
+
   auto data = make_shared<Data>();
   data->setName(dataName);
   data->setFreshnessPeriod(::ndn::time::milliseconds(m_freshness.GetMilliSeconds()));

@@ -7,7 +7,7 @@ class ScenarioSim : public NDNSatSimulator {
 public:
   using NDNSatSimulator::NDNSatSimulator;
   void Run() {
-    double simulation_seconds = 500;
+    double simulation_seconds = 155;
     std::string prefix = "/prefix/uid-";
     Ptr<Node> node1 = m_allNodes.Get(1590); // Beijing
     Ptr<Node> node2 = m_allNodes.Get(1586); // Shanghai
@@ -15,22 +15,22 @@ public:
     m_prefix = prefix + to_string(1593);;
     // cout << "PREFIX: " << prefix2 << endl;
     // Consumer
-    ndn::AppHelper consumerHelper("ns3::ndn::ConsumerWindow");
+    ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
     // Beijing First
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("PayloadSize", StringValue("1380"));
-    consumerHelper.SetAttribute("Size", StringValue("10")); // 1 Megabytes
-    consumerHelper.SetAttribute("Window", StringValue("10"));
-    consumerHelper.SetAttribute("RetxTimer", StringValue("1s"));
+    // consumerHelper.SetAttribute("PayloadSize", StringValue("1380"));
+    consumerHelper.SetAttribute("Frequency", StringValue("100")); // 1 Megabytes
+    consumerHelper.SetAttribute("StartSeq", StringValue("0"));
+    consumerHelper.SetAttribute("MaxSeq", StringValue("10000"));
     consumerHelper.Install(node1).Start(MilliSeconds(1)); // Beijing
 
     // Shanghai Second
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("PayloadSize", StringValue("1380"));
-    consumerHelper.SetAttribute("Size", StringValue("10")); // 1024 Megabytes
-    consumerHelper.SetAttribute("Window", StringValue("10"));
-    consumerHelper.SetAttribute("RetxTimer", StringValue("1s"));
-    consumerHelper.Install(node2).Start(MilliSeconds(1)); // Shanghai
+    // consumerHelper.SetAttribute("PayloadSize", StringValue("1380"));
+    consumerHelper.SetAttribute("Frequency", StringValue("100")); // 1 Megabytes
+    consumerHelper.SetAttribute("StartSeq", StringValue("0"));
+    consumerHelper.SetAttribute("MaxSeq", StringValue("10000"));
+    consumerHelper.Install(node2).Start(Seconds(50) + MilliSeconds(1)); // Shanghai
 
     // Producer
     ndn::AppHelper producerHelper("ns3::ndn::Producer");
@@ -51,9 +51,10 @@ public:
   }
 };
 }
+// ./waf --run=cache_cbr |& tee -a logs/cache-cbr/overlap-100-50/ndn-cbr-both
 // NS_LOG=ndn.Consumer ./waf --run=a_b_starlink_BJ_NY_w10 |& tee -a logs/window/ndn-w10-04.txt
 // NS_LOG=ndn.Consumer ./waf --run=a_b_starlink_BJ_NY_window |& tee -a logs/ndn_window_ll_10.txt
-// ./waf --run=cache_2consumers |& tee -a logs/2consumers/both-17-o0-cs1e2.txt
+// ./waf --run=a_b_starlink_BJ_NY_w10 |& tee -a logs/window-loss-4/ndn_w10_le-7.txt
 int
 main(int argc, char* argv[])
 {

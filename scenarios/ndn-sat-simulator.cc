@@ -95,6 +95,10 @@ NDNSatSimulator::NDNSatSimulator(string config) {
   AddGSLs();
   // Install NDN stack on all nodes
   ndn::LeoStackHelper ndnHelper;
+
+  // Set content store size
+  ndnHelper.setCsSize(100);
+
   // ndnHelper.SetDefaultRoutes(true);
   ndnHelper.Install(m_allNodes);
 
@@ -319,8 +323,8 @@ void RemoveExistingLink(Ptr<Node> node, string prefix, shared_ptr<ns3::ndn::Face
     // Remove additional GSl hardware routes
     if (face->getLinkType() == ::ndn::nfd::LINK_TYPE_AD_HOC) {
       ns3::ndn::NetDeviceTransport* ts = dynamic_cast<ns3::ndn::NetDeviceTransport*>(face->getTransport());
-      ts->RemoveNextDataHop(dest);
-      // ns3::Simulator::Schedule(ns3::Seconds(1), &RemoveNextDataHop, ts, dest);
+      // ts->RemoveNextDataHop(dest);
+      ns3::Simulator::Schedule(ns3::Seconds(1), &RemoveNextDataHop, ts, dest);
     }
     curNextHop->erase(p);
   }
@@ -391,6 +395,12 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, int deviceId,
 
   auto p = make_pair(node->GetId(), prefix);
   if (node == gsNode) {
+    // if (node->GetId() == 1590) {
+    //   cout << "GSL CHANGE:1590," << (Simulator::Now().GetMilliSeconds() / 1000.0) << endl;
+    // }
+    // if (node->GetId() == 1593) {
+    //   cout << "GSL CHANGE:1593," << (Simulator::Now().GetMilliSeconds() / 1000.0) << endl;
+    // }
     // gs -> sat
     // cout << "Adding Route 2: " << node->GetId() << "," << prefix << "," << otherNode->GetId() << endl;
     RemoveExistingLink(node, prefix, gsFace, curNextHop);
