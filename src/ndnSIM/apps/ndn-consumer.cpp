@@ -130,8 +130,10 @@ Consumer::CheckRetxTimeout()
     else
       break; // nothing else to do. All later packets need not be retransmitted
   }
-
-  m_retxEvent = Simulator::Schedule(m_retxTimer, &Consumer::CheckRetxTimeout, this);
+  // no retransmit when timer < 0
+  if (m_retxTimer >= Seconds(0)) {
+    m_retxEvent = Simulator::Schedule(m_retxTimer, &Consumer::CheckRetxTimeout, this);
+  }
 }
 
 // Application Methods

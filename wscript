@@ -1036,10 +1036,10 @@ def add_examples_programs(bld):
 def add_scenerios(bld):
     all_modules = [mod[len("ns3-"):] for mod in bld.env['NS3_ENABLED_MODULES'] + bld.env['NS3_ENABLED_CONTRIBUTED_MODULES']]
     try:
-        test_dir = 'scenarios/test'
-        for filename in os.listdir('scenarios/test'):
+        run_dir = 'scenarios/runs'
+        for filename in os.listdir('scenarios/runs'):
 
-            f = os.path.join(test_dir, filename)
+            f = os.path.join(run_dir, filename)
             if os.path.isfile(f):
                 obj = bld.create_ns3_program(os.path.splitext(filename)[0], all_modules)
                 obj.source = [

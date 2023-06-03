@@ -63,7 +63,7 @@ NDNSatSimulator::NDNSatSimulator(string config) {
   Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
 
   // Configuration
-  string ns3_config = "scenarios/config/3nodes_test.properties";
+  string ns3_config = "scenarios/config/run.properties";
 
   // Reading nodes
   
