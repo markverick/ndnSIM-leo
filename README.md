@@ -48,9 +48,14 @@ git submodule update --recursive --init
 
 ## Running
 ```
-NS_LOG=ndn.Consumer:ndn.Producer ./waf --run=<scenario name>
+cd ns3-dev-leo/experiments/a_b
+python step_1_generate_runs.py 
+python step_2_run.py
 ```
-For example
-```
-NS_LOG=ndn.Consumer:ndn.Producer ./waf --run=a_b_3nodes_ping.cc
-```
+## Modifying run list
+The run list is located at `experiments/a_b/run_list.py`. You can change the following:
+1) Dynamic states and GSL generation algorithm
+2) NDN scenarios (Consumer/Producer nodes, Ping, Window, Multiple Consumers)
+3) Set the loss rate, bandwidth and queue size
+4) Set the simulation time
+
