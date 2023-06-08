@@ -82,7 +82,7 @@ public:
   bool m_satellite_network_force_static;        //<! True to disable satellite movement and basically run
                                               //   it static at t=0 (like a static network)
   std::string m_prefix;                         // NDN's prefix
-
+  std::string m_name;
 
   // Generated state
   NodeContainer m_allNodes;                           //!< All nodes

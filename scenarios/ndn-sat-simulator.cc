@@ -63,7 +63,7 @@ NDNSatSimulator::NDNSatSimulator(string config) {
   Config::SetDefault("ns3::DropTailQueue<Packet>::MaxSize", StringValue("20p"));
 
   // Configuration
-  string ns3_config = "scenarios/config/run.properties";
+  // string ns3_config = "scenarios/config/run.properties";
 
   // Reading nodes
   
@@ -122,8 +122,9 @@ void NDNSatSimulator::ReadConfig(std::string conf) {
   m_satellite_network_dir = getConfigParamOrDefault("satellite_network_dir", "network_dir");
   m_satellite_network_routes_dir =  getConfigParamOrDefault("satellite_network_routes_dir", "network_dir/routes_dir");
   m_satellite_network_force_static = parse_boolean(getConfigParamOrDefault("satellite_network_force_static", "false"));
-  m_node1_id = stoi(getConfigParamOrDefault("consumer_id", "0"));
-  m_node2_id = stoi(getConfigParamOrDefault("producer_id", "0"));
+  m_node1_id = stoi(getConfigParamOrDefault("from_id", "0"));
+  m_node2_id = stoi(getConfigParamOrDefault("to_id", "0"));
+  m_name = getConfigParamOrDefault("name", "run");
 
   // Print full config
   printf("CONFIGURATION\n-----\nKEY                                       VALUE\n");

@@ -117,9 +117,10 @@ ConsumerPing::OnTimeout(uint32_t sequenceNumber)
   // std::cout << Simulator::Now () << ", TO: " << sequenceNumber << ", current RTO: " <<
   // m_rtt->RetransmitTimeout ().ToDouble (Time::S) << "s\n";
 
-  m_rtt->IncreaseMultiplier(); // Double the next RTO
-  m_rtt->SentSeq(SequenceNumber32(sequenceNumber),
-                 1); // make sure to disable RTT calculation for this sample
+  m_rtt->ClearSent();
+  // m_rtt->IncreaseMultiplier(); // Double the next RTO
+  // m_rtt->SentSeq(SequenceNumber32(sequenceNumber),
+                //  0); // make sure to disable RTT calculation for this sample
   // m_retxSeqs.insert(sequenceNumber);
   // ScheduleNextPacket();
 }

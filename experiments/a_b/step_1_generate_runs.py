@@ -40,7 +40,6 @@ for run in get_ndn_run_list():
     run_dir = "runs/" + run["name"]
     local_shell.remove_force_recursive(run_dir)
     local_shell.make_full_dir(run_dir)
-
     # config_ns3.properties
     local_shell.copy_file("templates/template_ndn_a_b_config_ns3.properties", run_dir + "/config_ns3.properties")
     local_shell.sed_replace_in_file_plain(run_dir + "/config_ns3.properties",
@@ -65,7 +64,12 @@ for run in get_ndn_run_list():
                                           "[GSL-ERROR-RATE]", str(run["gsl_error_rate"]))
     local_shell.sed_replace_in_file_plain(run_dir + "/config_ns3.properties",
                                           "[NDN-CLIENT]", str(run["ndn_client"]))
-
+    local_shell.sed_replace_in_file_plain(run_dir + "/config_ns3.properties",
+                                          "[FROM-ID]", str(run["from_id"]))
+    local_shell.sed_replace_in_file_plain(run_dir + "/config_ns3.properties",
+                                          "[TO-ID]", str(run["to_id"]))
+    local_shell.sed_replace_in_file_plain(run_dir + "/config_ns3.properties",
+                                          "[NAME]", str(run["name"]))
 
 # Print finish
 print("Success: generated runs")
