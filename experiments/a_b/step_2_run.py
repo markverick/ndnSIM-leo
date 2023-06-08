@@ -58,6 +58,7 @@ for i in range(len(commands_to_run)):
     local_shell.detached_exec(commands_to_run[i])
     while local_shell.count_screens() >= max_num_processes:
         time.sleep(2)
+    time.sleep(10)
 
 # Awaiting final completion before exiting
 print("Waiting completion of the last %d..." % max_num_processes)

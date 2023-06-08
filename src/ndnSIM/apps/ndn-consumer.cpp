@@ -243,7 +243,7 @@ Consumer::OnData(shared_ptr<const Data> data)
 
   SeqTimeoutsContainer::iterator entry = m_seqLastDelay.find(seq);
   if (entry != m_seqLastDelay.end()) {
-    std::cout << GetNode()->GetId() << "," << GetId() << "," << Now().GetNanoSeconds() << "," << seq * 1380 << "," << (Simulator::Now() - entry->time).GetNanoSeconds() / 1000000.00 << std::endl;
+    // std::cout << GetNode()->GetId() << "," << GetId() << "," << Now().GetNanoSeconds() << "," << seq * 1380 << "," << (Simulator::Now() - entry->time).GetNanoSeconds() / 1000000.00 << std::endl;
     m_lastRetransmittedInterestDataDelay(this, seq, Simulator::Now() - entry->time, hopCount);
   }
 
