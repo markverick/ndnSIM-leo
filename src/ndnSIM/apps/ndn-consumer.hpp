@@ -74,6 +74,12 @@ public:
   OnTimeout(uint32_t sequenceNumber);
 
   /**
+   * @brief Force all in-flight packets to timeout 
+   */
+  void
+  ForceTimeout();
+
+  /**
    * @brief Actually send packet
    */
   void

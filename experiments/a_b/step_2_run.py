@@ -45,11 +45,18 @@ for run in get_ndn_run_list():
     logs_ns3_dir = "runs/" + run["name"] + "/logs_ns3"
     local_shell.remove_force_recursive(logs_ns3_dir)
     local_shell.make_full_dir(logs_ns3_dir)
-    commands_to_run.append(
-        "cd ../../; "
-        "./waf --run=\"a_b_ping --run_dir='" + run["name"] + "'\" "
-        "2>&1 | tee '" + 'experiments/a_b/' + logs_ns3_dir + "/console.txt'"
-    )
+    if (run["ndn_client"] == "Ping"):
+        commands_to_run.append(
+            "cd ../../; "
+            "./waf --run=\"a_b_ping --run_dir='" + run["name"] + "'\" "
+            "2>&1 | tee '" + 'experiments/a_b/' + logs_ns3_dir + "/console.txt'"
+        )
+    elif (run["ndn_client"] == "PingInstantRetx"):
+        commands_to_run.append(
+            "cd ../../; "
+            "./waf --run=\"a_b_ping_instant_retx --run_dir='" + run["name"] + "'\" "
+            "2>&1 | tee '" + 'experiments/a_b/' + logs_ns3_dir + "/console.txt'"
+        )
 
 # Run the commands
 print("Running commands (at most %d in parallel)..." % max_num_processes)

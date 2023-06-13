@@ -50,12 +50,12 @@ ds_alg['free'] = "starlink_550_isls_plus_grid_ground_stations_4_different_orbits
 
 ds = "dynamic_state_100ms_for_200s"
 # cc_list = ["TcpNewReno", "TcpCubic", "TcpVegas","TcpBbr"]
-ndn_clients = ["Ping"]
+ndn_clients = ["PingInstantRetx"]
 pairs = [
     (1584 + 0, 1584 + 1, 'Sao-Paulo 11000k'),
-    (1584 + 2, 1584 + 3, 'San-Jose 11000k'),
-    (1584 + 4, 1584 + 5, 'Montreal 11000k'),
-    (1584 + 6, 1584 + 7, 'Victoria 11000k'),
+    # (1584 + 2, 1584 + 3, 'San-Jose 11000k'),
+    # (1584 + 4, 1584 + 5, 'Montreal 11000k'),
+    # (1584 + 6, 1584 + 7, 'Victoria 11000k'),
     # (1584 + 0, 1584 + 8, 'Sao-Paulo 5500k'),
     # (1584 + 2, 1584 + 9, 'San-Jose 5500k'),
     # (1584 + 4, 1584 + 10, 'Montreal 5500k'),

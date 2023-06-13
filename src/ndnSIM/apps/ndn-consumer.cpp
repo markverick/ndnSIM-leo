@@ -108,6 +108,18 @@ Consumer::GetRetxTimer() const
 }
 
 void
+Consumer::ForceTimeout()
+{
+  while (!m_seqTimeouts.empty()) {
+    SeqTimeoutsContainer::index<i_timestamp>::type::iterator entry =
+      m_seqTimeouts.get<i_timestamp>().begin();
+    uint32_t seqNo = entry->seq;
+    m_seqTimeouts.get<i_timestamp>().erase(entry);
+    OnTimeout(seqNo);
+  }
+}
+
+void
 Consumer::CheckRetxTimeout()
 {
   Time now = Simulator::Now();

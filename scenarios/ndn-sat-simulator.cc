@@ -39,6 +39,7 @@
 #include "ns3/ipv4.h"
 #include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
 #include "ns3/ndn-leo-stack-helper.h"
+#include "ns3/ndnSIM/apps/ndn-consumer.hpp"
 #include "ndn-sat-simulator.h"
 
 namespace ns3 {
@@ -553,12 +554,12 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
   }
   std::cout << std::endl;
 }
-void NDNSatSimulator::ImportDynamicStateSatGSLUnicast(ns3::NodeContainer nodes, string dname, int src, int dst) {
-  ImportDynamicStateSatGSLUnicast(nodes, dname, src, dst, -1);
+void NDNSatSimulator::ImportDynamicStateSatInstantRetx(ns3::NodeContainer nodes, string dname, int consumer_id, int producer_id) {
+  ImportDynamicStateSatInstantRetx(nodes, dname, consumer_id, producer_id, -1);
 }
-void NDNSatSimulator::ImportDynamicStateSatGSLUnicast(ns3::NodeContainer nodes, string dname, int src, int dst, double limit) {
+void NDNSatSimulator::ImportDynamicStateSatInstantRetx(ns3::NodeContainer nodes, string dname, int consumer_id, int producer_id, double limit) {
   // Construct a  link inference from dynamic state
-  m_cur_next_hop = make_shared<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address> > > ();
+  m_cur_next_hop = make_shared<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address> >> ();
   // Iterate through the dynamic state directory
   for (const auto & entry : filesystem::directory_iterator(dname)) {
     // Extract nanoseconds from file name
@@ -588,29 +589,20 @@ void NDNSatSimulator::ImportDynamicStateSatGSLUnicast(ns3::NodeContainer nodes, 
       boost::split(result, line, boost::is_any_of(","));
       current_node = stoi(result[0]);
       // destination_node = stoi(result[1]);
-      next_hop = stoi(result[2]);
+      next_hop = stoi(result[2]);;
       // Add AddRoute schedule
       prefix = "/prefix/uid-" + result[1];
-
-      // Skip adding other routes for faster debug
-      if (stoi(result[1]) != src && stoi(result[1]) != dst) continue;
-      // cout << ms / 1000 << "Add Route: " << current_node << "," << prefix << "," << next_hop << endl;
-      // 
-      if (current_node >= m_satelliteNodes.GetN() || next_hop >= m_satelliteNodes.GetN()) {
-        if (current_node >= m_satelliteNodes.GetN()) {
-          // Only add GSL from src to dst or dst to src
-          if (stoi(result[1]) == dst && current_node == src) {
-            ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node), stoi(result[3]),
-              prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop);
-          }
-          else if (stoi(result[1]) == src && current_node == dst) {
-            ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node), stoi(result[3]),
-              prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop);
-          }
-        } else {
-          ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node), stoi(result[3]),
-              prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop);
+      if (consumer_id == current_node && producer_id == stoi(result[1])) {
+        Ptr<Node> node = m_allNodes.Get(consumer_id);
+        for (uint32_t i = 0; i < node->GetNApplications(); i++) {
+          Ptr<ndn::Consumer> app = DynamicCast<ndn::Consumer>(node->GetApplication(i));
+          app->ForceTimeout();
         }
+      }
+      // cout << ms / 1000 << "Add Route: " << current_node << "," << prefix << "," << next_hop << endl;
+      if (current_node >= m_satelliteNodes.GetN() || next_hop >= m_satelliteNodes.GetN()) {
+        ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node), stoi(result[3]),
+                                prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop);
       } else {
         ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteISL, nodes.Get(current_node), stoi(result[3]),
                                 prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop);
