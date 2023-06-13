@@ -43,9 +43,9 @@
 
 namespace ns3 {
 
-int HANDOVER_DURATION = 0.000001; // in seconds
+int HANDOVER_DURATION = 0.000000001; // in seconds
 // int DELAYED_REMOVAL = 1; // in seconds
-int DELAYED_REMOVAL = 1; // in seconds
+int DELAYED_REMOVAL = 0.00000002; // in seconds
 
 void printFibTable(Ptr<Node> node) {
   cout << Simulator::Now().GetSeconds() << " -- Node: " << node->GetId() << endl;
@@ -101,7 +101,7 @@ NDNSatSimulator::NDNSatSimulator(string config) {
   ndn::LeoStackHelper ndnHelper;
 
   // Set content store size
-  ndnHelper.setCsSize(100);
+  ndnHelper.setCsSize(10000);
 
   // ndnHelper.SetDefaultRoutes(true);
   ndnHelper.Install(m_allNodes);
@@ -316,20 +316,20 @@ void AddRouteCustom(ns3::Ptr<ns3::Node> node, string prefix, shared_ptr<ns3::ndn
   ns3::ndn::FibHelper::AddRoute(node, prefix, face, metric);
 }
 
-void RemoveExistingLink(Ptr<Node> node, string prefix, shared_ptr<ns3::ndn::Face> nextHop, shared_ptr<ns3::ndn::Face> prevFace, Address dest) {
-  // if (prevFace->getId() != nextHop->getId()) {
-  //   ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevFace);
-  // }
+void RemoveExistingLink(Ptr<Node> node, string prefix, shared_ptr<ns3::ndn::Face> nextHop, shared_ptr<ns3::ndn::Face> prevCurFace, shared_ptr<ns3::ndn::Face> prevNextFace, Address dest) {
+  if (prevCurFace->getId() != nextHop->getId()) {
+    ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevCurFace);
+  }
   // Remove additional GSl hardware routes
-  if (prevFace->getLinkType() == ::ndn::nfd::LINK_TYPE_AD_HOC) {
-    ns3::ndn::NetDeviceTransport* ts = dynamic_cast<ns3::ndn::NetDeviceTransport*>(prevFace->getTransport());
+  if (prevCurFace->getLinkType() == ::ndn::nfd::LINK_TYPE_AD_HOC) {
+    ns3::ndn::NetDeviceTransport* ts = dynamic_cast<ns3::ndn::NetDeviceTransport*>(prevNextFace->getTransport());
     ts->RemoveNextDataHop(dest);
     // ns3::Simulator::Schedule(ns3::Seconds(0), &RemoveNextDataHop, ts, dest);
   }
 }
 
 void AddRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
-                string prefix, ns3::Ptr<ns3::Node> otherNode, int otherDeviceId, shared_ptr<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, Address> >> curNextHop)
+                string prefix, ns3::Ptr<ns3::Node> otherNode, int otherDeviceId, shared_ptr<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address> >> curNextHop)
 {
   NS_ASSERT_MSG(deviceId < node->GetNDevices(), "Sorce device ID must be valid");
   NS_ASSERT_MSG(otherDeviceId < otherNode->GetNDevices(), "Next hop device ID must be valid");
@@ -347,21 +347,21 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
   // Remove route -> Add route -> Remove backward link
   auto p = make_pair(node->GetId(), prefix);
   if (curNextHop->find(p) != curNextHop->end()) {
-    shared_ptr<ns3::ndn::Face> prevFace;
+    shared_ptr<ns3::ndn::Face> prevCurFace, prevNextFace;
     Address prevDest;
-    tie(prevFace, prevDest) = (*curNextHop)[p];
-    ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevFace);
-    ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, face, prevFace, prevDest);
+    tie(prevCurFace, prevNextFace, prevDest) = (*curNextHop)[p];
+    ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevCurFace);
+    ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, face, prevCurFace, prevNextFace, prevDest);
     // RemoveExistingLink(node, prefix, face, prevFace, prevDest);
   }
   ns3::Simulator::Schedule(ns3::Seconds(HANDOVER_DURATION), &AddRouteCustom, node, prefix, face, 1);
   // ns3::ndn::FibHelper::AddRoute(node, prefix, face, 1);
   // Add the current route for future removal
-  (*curNextHop)[p] = make_pair(face, remoteNetDevice->GetAddress());
+  (*curNextHop)[p] = make_tuple(face, remoteFace, netDevice->GetAddress());
 }
 
 void AddRouteGSL(ns3::Ptr<ns3::Node> node, int deviceId,
-                string prefix, ns3::Ptr<ns3::Node> otherNode, int otherDeviceId, shared_ptr<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, Address> >> curNextHop)
+                string prefix, ns3::Ptr<ns3::Node> otherNode, int otherDeviceId, shared_ptr<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address> >> curNextHop)
 {
   NS_ASSERT_MSG(deviceId < node->GetNDevices(), "Sorce device ID must be valid");
   NS_ASSERT_MSG(otherDeviceId < otherNode->GetNDevices(), "Next hop device ID must be valid");
@@ -402,35 +402,35 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, int deviceId,
   
   // Remove route -> Add route -> Remove backward link
   auto p = make_pair(node->GetId(), prefix);
-  shared_ptr<ns3::ndn::Face> prevFace;
+  shared_ptr<ns3::ndn::Face> prevCurFace, prevNextFace;
   Address prevDest;
   if (node == gsNode) {
     // gs -> sat
     // Remove existing route
     if (curNextHop->find(p) != curNextHop->end()) {
-      tie(prevFace, prevDest) = (*curNextHop)[p];
-      ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevFace);
-      ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, gsFace, prevFace, prevDest);
+      tie(prevCurFace, prevNextFace, prevDest) = (*curNextHop)[p];
+      ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevCurFace);
+      ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, gsFace, prevCurFace, prevNextFace, prevDest);
     }
     ns3::Simulator::Schedule(ns3::Seconds(HANDOVER_DURATION), &AddRouteCustom, node, prefix, gsFace, 1);
     // ns3::ndn::FibHelper::AddRoute(node, prefix, gsFace, 1);
     // printFibTable(node);
     // Add the current route for future removal
-    (*curNextHop)[p] = make_pair(gsFace, satNetDevice->GetAddress());
+    (*curNextHop)[p] = make_tuple(gsFace, satFace, gsNetDevice->GetAddress());
     gsTransport->SetNextInterestHop(prefix, satNetDevice->GetAddress());
     satTransport->AddNextDataHop(gsNetDevice->GetAddress());
     // gsTransport->AddNextDataHop(satNetDevice->GetAddress());
   } else {
     // sat -> gs
     if (curNextHop->find(p) != curNextHop->end()) {
-      tie(prevFace, prevDest) = (*curNextHop)[p];
-      ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevFace);
-      ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, satFace, prevFace, prevDest);
+      tie(prevCurFace, prevNextFace, prevDest) = (*curNextHop)[p];
+      ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevCurFace);
+      ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, satFace, prevCurFace, prevNextFace, prevDest);
     }
     ns3::Simulator::Schedule(ns3::Seconds(HANDOVER_DURATION), &AddRouteCustom, node, prefix, satFace, 1);
     // ns3::ndn::FibHelper::AddRoute(node, prefix, satFace, 1);
     // Add the current route for future removal
-    (*curNextHop)[p] = make_pair(satFace, gsNetDevice->GetAddress());
+    (*curNextHop)[p] = make_tuple(satFace, gsFace, satNetDevice->GetAddress());
     satTransport->SetNextInterestHop(prefix, gsNetDevice->GetAddress());
     gsTransport->AddNextDataHop(satNetDevice->GetAddress());
   }
@@ -507,7 +507,7 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
 
 void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, double limit) {
   // Construct a  link inference from dynamic state
-  m_cur_next_hop = make_shared<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, Address> >> ();
+  m_cur_next_hop = make_shared<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address> >> ();
   // Iterate through the dynamic state directory
   for (const auto & entry : filesystem::directory_iterator(dname)) {
     // Extract nanoseconds from file name
@@ -558,7 +558,7 @@ void NDNSatSimulator::ImportDynamicStateSatGSLUnicast(ns3::NodeContainer nodes, 
 }
 void NDNSatSimulator::ImportDynamicStateSatGSLUnicast(ns3::NodeContainer nodes, string dname, int src, int dst, double limit) {
   // Construct a  link inference from dynamic state
-  m_cur_next_hop = make_shared<map<pair<uint32_t, string>, pair<shared_ptr<ns3::ndn::Face>, Address> > > ();
+  m_cur_next_hop = make_shared<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address> > > ();
   // Iterate through the dynamic state directory
   for (const auto & entry : filesystem::directory_iterator(dname)) {
     // Extract nanoseconds from file name

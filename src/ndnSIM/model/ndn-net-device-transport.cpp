@@ -142,6 +142,9 @@ NetDeviceTransport::doSend(const Block& packet)
   // is compiled after (external ns-3 module)
   auto netDevice = GetNetDevice();
   if (netDevice->IsMulticast()) {
+    // if(netDevice->GetNode()->GetId() == 115) {
+    //   std::cout << Simulator::Now().GetMilliSeconds() << ":: Node: " << netDevice->GetNode()->GetId() << ", Address: " << netDevice->GetIfIndex() << std::endl;
+    // }
     netDevice->Send(ns3Packet, netDevice->GetBroadcast(),
                       L3Protocol::ETHERNET_FRAME_TYPE);
   } else {
@@ -166,6 +169,7 @@ NetDeviceTransport::doSend(const Block& packet)
       std::string prefix = d.getName().getSubName(0, 2).toUri();
       // std::cout << prefix << std::endl;
       // std::string prefix = d.getName().getPrefix(-1).toUri();
+      // std::cout << Simulator::Now().GetSeconds() << "," << netDevice->GetNode()->GetId() << ", " << m_next_data_hops.size() << std::endl;
       for (auto it = m_next_data_hops.begin(); it != m_next_data_hops.end(); it++) {
         if (it->second > 0)
           netDevice->Send(ns3Packet->Copy(), it->first,
@@ -238,7 +242,7 @@ NetDeviceTransport::RemoveNextDataHop(Address dest) {
       m_next_data_hops.erase(dest);
     }
   } else {
-    // std::cout << "  NEGATIVE HOP COUNTS" << std::endl;
+    std::cout << "  NEGATIVE HOP COUNTS" << std::endl;
     m_next_data_hops[dest] = -1;
   }
 }

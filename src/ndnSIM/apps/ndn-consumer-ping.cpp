@@ -114,7 +114,7 @@ void
 ConsumerPing::OnTimeout(uint32_t sequenceNumber)
 {
   NS_LOG_FUNCTION(sequenceNumber);
-  std::cout << Simulator::Now () << ", TO: " << sequenceNumber << ", current RTO: " <<
+  std::cout << Simulator::Now ().GetMilliSeconds() << ", TO: " << sequenceNumber << ", current RTO: " <<
   m_rtt->RetransmitTimeout ().ToDouble (Time::S) << "s\n";
 
   m_rtt->ClearSent();
