@@ -557,6 +557,10 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
 void NDNSatSimulator::ImportDynamicStateSatInstantRetx(ns3::NodeContainer nodes, string dname, int consumer_id, int producer_id) {
   ImportDynamicStateSatInstantRetx(nodes, dname, consumer_id, producer_id, -1);
 }
+
+void ForceTimeout(Ptr<ndn::Consumer>app ) {
+  app->ForceTimeout();
+}
 void NDNSatSimulator::ImportDynamicStateSatInstantRetx(ns3::NodeContainer nodes, string dname, int consumer_id, int producer_id, double limit) {
   // Construct a  link inference from dynamic state
   m_cur_next_hop = make_shared<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address> >> ();
@@ -596,7 +600,7 @@ void NDNSatSimulator::ImportDynamicStateSatInstantRetx(ns3::NodeContainer nodes,
         Ptr<Node> node = m_allNodes.Get(consumer_id);
         for (uint32_t i = 0; i < node->GetNApplications(); i++) {
           Ptr<ndn::Consumer> app = DynamicCast<ndn::Consumer>(node->GetApplication(i));
-          app->ForceTimeout();
+          ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &ForceTimeout, app);
         }
       }
       // cout << ms / 1000 << "Add Route: " << current_node << "," << prefix << "," << next_hop << endl;
