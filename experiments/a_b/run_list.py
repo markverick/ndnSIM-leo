@@ -53,9 +53,9 @@ ds = "dynamic_state_100ms_for_200s"
 ndn_clients = ["PingInstantRetx"]
 pairs = [
     (1584 + 0, 1584 + 1, 'Sao-Paulo 11000k'),
-    # (1584 + 2, 1584 + 3, 'San-Jose 11000k'),
-    # (1584 + 4, 1584 + 5, 'Montreal 11000k'),
-    # (1584 + 6, 1584 + 7, 'Victoria 11000k'),
+    (1584 + 2, 1584 + 3, 'San-Jose 11000k'),
+    (1584 + 4, 1584 + 5, 'Montreal 11000k'),
+    (1584 + 6, 1584 + 7, 'Victoria 11000k'),
     # (1584 + 0, 1584 + 8, 'Sao-Paulo 5500k'),
     # (1584 + 2, 1584 + 9, 'San-Jose 5500k'),
     # (1584 + 4, 1584 + 10, 'Montreal 5500k'),
@@ -67,7 +67,7 @@ pairs = [
 chosen_pairs = []
 for nc in ndn_clients:
     for p in pairs:
-        chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "paired", 0, 0, p[2]))
+        chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "free", 0, 0, p[2]))
 
 def get_ndn_run_list():
     run_list = []
@@ -90,6 +90,7 @@ def get_ndn_run_list():
                 "ndn_client": p[3],
                 "isl_error_rate": p[5],
                 "gsl_error_rate": p[6],
+                
             },
         ]
 

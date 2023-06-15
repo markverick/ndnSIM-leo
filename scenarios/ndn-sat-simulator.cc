@@ -47,6 +47,7 @@ namespace ns3 {
 int HANDOVER_DURATION = 0.000000001; // in seconds
 // int DELAYED_REMOVAL = 1; // in seconds
 int DELAYED_REMOVAL = 0.00000002; // in seconds
+bool SINGLE_CHANNEL = true;
 
 void printFibTable(Ptr<Node> node) {
   cout << Simulator::Now().GetSeconds() << " -- Node: " << node->GetId() << endl;
@@ -544,6 +545,13 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
 
       // cout << ms / 1000 << "Add Route: " << current_node << "," << prefix << "," << next_hop << endl;
       if (current_node >= m_satelliteNodes.GetN() || next_hop >= m_satelliteNodes.GetN()) {
+        // Don't
+        if (SINGLE_CHANNEL) {
+          if ((current_node != m_node1_id || stoi(result[1]) != m_node2_id)
+          && (current_node != m_node2_id || stoi(result[1]) != m_node1_id)) {
+            continue;
+          }
+        }
         ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node), stoi(result[3]),
                                 prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop);
       } else {
@@ -558,7 +566,7 @@ void NDNSatSimulator::ImportDynamicStateSatInstantRetx(ns3::NodeContainer nodes,
   ImportDynamicStateSatInstantRetx(nodes, dname, consumer_id, producer_id, -1);
 }
 
-void ForceTimeout(Ptr<ndn::Consumer>app ) {
+void ForceTimeout(Ptr<ndn::Consumer> app) {
   app->ForceTimeout();
 }
 void NDNSatSimulator::ImportDynamicStateSatInstantRetx(ns3::NodeContainer nodes, string dname, int consumer_id, int producer_id, double limit) {
