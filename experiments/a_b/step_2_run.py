@@ -57,7 +57,18 @@ for run in get_ndn_run_list():
             "./waf --run=\"a_b_ping_instant_retx --run_dir='" + run["name"] + "'\" "
             "2>&1 | tee '" + 'experiments/a_b/' + logs_ns3_dir + "/console.txt'"
         )
+    elif (run["ndn_client"] == "FixedWindow"):
+        commands_to_run.append(
+            "cd ../../; "
+            "./waf --run=\"a_b_fixed_window --run_dir='" + run["name"] + "'\" "
+            "2>&1 | tee '" + 'experiments/a_b/' + logs_ns3_dir + "/console.txt'"
+        )
 
+# Compiling
+print("Compiling")
+local_shell.detached_exec("cd ../../; ./waf")
+while local_shell.count_screens() > 0:
+    time.sleep(1)
 # Run the commands
 print("Running commands (at most %d in parallel)..." % max_num_processes)
 for i in range(len(commands_to_run)):

@@ -17,7 +17,7 @@
  * ndnSIM, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#include "ndn-consumer-window.hpp"
+#include "ndn-consumer-fixed-window.hpp"
 #include "ns3/ptr.h"
 #include "ns3/log.h"
 #include "ns3/simulator.h"
@@ -28,94 +28,94 @@
 #include "ns3/double.h"
 #include <limits>
 
-NS_LOG_COMPONENT_DEFINE("ndn.ConsumerWindow");
+NS_LOG_COMPONENT_DEFINE("ndn.ConsumerFixedWindow");
 
 namespace ns3 {
 namespace ndn {
 
-NS_OBJECT_ENSURE_REGISTERED(ConsumerWindow);
+NS_OBJECT_ENSURE_REGISTERED(ConsumerFixedWindow);
 
 TypeId
-ConsumerWindow::GetTypeId(void)
+ConsumerFixedWindow::GetTypeId(void)
 {
   static TypeId tid =
-    TypeId("ns3::ndn::ConsumerWindow")
+    TypeId("ns3::ndn::ConsumerFixedWindow")
       .SetGroupName("Ndn")
       .SetParent<Consumer>()
-      .AddConstructor<ConsumerWindow>()
+      .AddConstructor<ConsumerFixedWindow>()
 
-      .AddAttribute("Window", "Initial size of the window", StringValue("1"),
-                    MakeUintegerAccessor(&ConsumerWindow::GetWindow, &ConsumerWindow::SetWindow),
+      .AddAttribute("Window", "Size of the window", StringValue("1"),
+                    MakeUintegerAccessor(&ConsumerFixedWindow::GetWindow, &ConsumerFixedWindow::SetWindow),
                     MakeUintegerChecker<uint32_t>())
 
       .AddAttribute("PayloadSize",
                     "Average size of content object size (to calculate interest generation rate)",
-                    UintegerValue(1040), MakeUintegerAccessor(&ConsumerWindow::GetPayloadSize,
-                                                              &ConsumerWindow::SetPayloadSize),
+                    UintegerValue(1040), MakeUintegerAccessor(&ConsumerFixedWindow::GetPayloadSize,
+                                                              &ConsumerFixedWindow::SetPayloadSize),
                     MakeUintegerChecker<uint32_t>())
 
       .AddAttribute("Size", "Amount of data in megabytes to request, relying on PayloadSize "
                             "parameter (alternative to MaxSeq attribute)",
                     DoubleValue(-1), // don't impose limit by default
-                    MakeDoubleAccessor(&ConsumerWindow::GetMaxSize, &ConsumerWindow::SetMaxSize),
+                    MakeDoubleAccessor(&ConsumerFixedWindow::GetMaxSize, &ConsumerFixedWindow::SetMaxSize),
                     MakeDoubleChecker<double>())
 
       .AddAttribute("MaxSeq", "Maximum sequence number to request (alternative to Size attribute, "
                               "would activate only if Size is -1). "
                               "The parameter is activated only if Size negative (not set)",
                     IntegerValue(std::numeric_limits<uint32_t>::max()),
-                    MakeUintegerAccessor(&ConsumerWindow::GetSeqMax, &ConsumerWindow::SetSeqMax),
+                    MakeUintegerAccessor(&ConsumerFixedWindow::GetSeqMax, &ConsumerFixedWindow::SetSeqMax),
                     MakeUintegerChecker<uint32_t>())
 
       .AddAttribute("InitialWindowOnTimeout", "Set window to initial value when timeout occurs",
                     BooleanValue(true),
-                    MakeBooleanAccessor(&ConsumerWindow::m_setInitialWindowOnTimeout),
+                    MakeBooleanAccessor(&ConsumerFixedWindow::m_setInitialWindowOnTimeout),
                     MakeBooleanChecker())
 
       .AddTraceSource("WindowTrace",
                       "Window that controls how many outstanding interests are allowed",
-                      MakeTraceSourceAccessor(&ConsumerWindow::m_window),
-                      "ns3::ndn::ConsumerWindow::WindowTraceCallback")
+                      MakeTraceSourceAccessor(&ConsumerFixedWindow::m_window),
+                      "ns3::ndn::ConsumerFixedWindow::WindowTraceCallback")
       .AddTraceSource("InFlight", "Current number of outstanding interests",
-                      MakeTraceSourceAccessor(&ConsumerWindow::m_inFlight),
-                      "ns3::ndn::ConsumerWindow::WindowTraceCallback");
+                      MakeTraceSourceAccessor(&ConsumerFixedWindow::m_inFlight),
+                      "ns3::ndn::ConsumerFixedWindow::WindowTraceCallback");
 
   return tid;
 }
 
-ConsumerWindow::ConsumerWindow()
+ConsumerFixedWindow::ConsumerFixedWindow()
   : m_payloadSize(1040)
   , m_inFlight(0)
 {
 }
 
 void
-ConsumerWindow::SetWindow(uint32_t window)
+ConsumerFixedWindow::SetWindow(uint32_t window)
 {
   m_initialWindow = window;
   m_window = m_initialWindow;
 }
 
 uint32_t
-ConsumerWindow::GetWindow() const
+ConsumerFixedWindow::GetWindow() const
 {
   return m_initialWindow;
 }
 
 uint32_t
-ConsumerWindow::GetPayloadSize() const
+ConsumerFixedWindow::GetPayloadSize() const
 {
   return m_payloadSize;
 }
 
 void
-ConsumerWindow::SetPayloadSize(uint32_t payload)
+ConsumerFixedWindow::SetPayloadSize(uint32_t payload)
 {
   m_payloadSize = payload;
 }
 
 double
-ConsumerWindow::GetMaxSize() const
+ConsumerFixedWindow::GetMaxSize() const
 {
   if (m_seqMax == 0)
     return -1.0;
@@ -124,7 +124,7 @@ ConsumerWindow::GetMaxSize() const
 }
 
 void
-ConsumerWindow::SetMaxSize(double size)
+ConsumerFixedWindow::SetMaxSize(double size)
 {
   m_maxSize = size;
   if (m_maxSize < 0) {
@@ -138,13 +138,13 @@ ConsumerWindow::SetMaxSize(double size)
 }
 
 uint32_t
-ConsumerWindow::GetSeqMax() const
+ConsumerFixedWindow::GetSeqMax() const
 {
   return m_seqMax;
 }
 
 void
-ConsumerWindow::SetSeqMax(uint32_t seqMax)
+ConsumerFixedWindow::SetSeqMax(uint32_t seqMax)
 {
   if (m_maxSize < 0)
     m_seqMax = seqMax;
@@ -153,7 +153,7 @@ ConsumerWindow::SetSeqMax(uint32_t seqMax)
 }
 
 void
-ConsumerWindow::ScheduleNextPacket()
+ConsumerFixedWindow::ScheduleNextPacket()
 {
   if (m_window == static_cast<uint32_t>(0)) {
     Simulator::Remove(m_sendEvent);
@@ -183,11 +183,11 @@ ConsumerWindow::ScheduleNextPacket()
 ///////////////////////////////////////////////////
 
 void
-ConsumerWindow::OnData(shared_ptr<const Data> contentObject)
+ConsumerFixedWindow::OnData(shared_ptr<const Data> contentObject)
 {
   Consumer::OnData(contentObject);
 
-  m_window = m_window + 1;
+  // m_window = m_window + 1;
 
   if (m_inFlight > static_cast<uint32_t>(0))
     m_inFlight--;
@@ -197,7 +197,7 @@ ConsumerWindow::OnData(shared_ptr<const Data> contentObject)
 }
 
 void
-ConsumerWindow::OnTimeout(uint32_t sequenceNumber)
+ConsumerFixedWindow::OnTimeout(uint32_t sequenceNumber)
 {
   if (m_inFlight > static_cast<uint32_t>(0))
     m_inFlight--;
@@ -212,7 +212,7 @@ ConsumerWindow::OnTimeout(uint32_t sequenceNumber)
 }
 
 void
-ConsumerWindow::WillSendOutInterest(uint32_t sequenceNumber)
+ConsumerFixedWindow::WillSendOutInterest(uint32_t sequenceNumber)
 {
   m_inFlight++;
   Consumer::WillSendOutInterest(sequenceNumber);

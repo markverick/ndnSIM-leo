@@ -50,6 +50,7 @@ ds_alg['free'] = "starlink_550_isls_plus_grid_ground_stations_4_different_orbits
 
 ds = "dynamic_state_100ms_for_200s"
 # cc_list = ["TcpNewReno", "TcpCubic", "TcpVegas","TcpBbr"]
+# ndn_clients = ["PingInstantRetx", "Ping", "FixedWindow"]
 ndn_clients = ["PingInstantRetx"]
 pairs = [
     (1584 + 0, 1584 + 1, 'Sao-Paulo 11000k'),
@@ -61,13 +62,33 @@ pairs = [
     # (1584 + 4, 1584 + 10, 'Montreal 5500k'),
     # (1584 + 6, 1584 + 11, 'Victoria 5500k'),
 ]
+ratios = []
+# ratios = [
+#         '0',
+#         '3e-8',
+#         '1e-7',
+#         '3e-7',
+#         '1e-6',
+#         '3e-6',
+#         '1e-5',
+#         '3e-5',
+#         '1e-4',
+#         '3e-4',
+#         '1e-3',
+#         ]
+# ratios = ['1e-7']
 # pairs = [
 #     (1584 + 2, 1584 + 3, 'San-Jose 11000k'),
 # ]
 chosen_pairs = []
 for nc in ndn_clients:
     for p in pairs:
-        chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "free", 0, 0, p[2]))
+        if (len(ratios) == 0):
+            chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "free", 0, 0, p[2]))
+        else:
+            for r in ratios:
+                chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "free", float(r), float(r), p[2]))
+
 
 def get_ndn_run_list():
     run_list = []
