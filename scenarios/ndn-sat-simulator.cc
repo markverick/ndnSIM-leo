@@ -525,7 +525,7 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
     } 
     int64_t current_node;
     // int destination_node;
-    string prefix, prefixReverse;
+    string prefix;
     int64_t next_hop;
 
     // Read each file
@@ -545,8 +545,6 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
       if (current_node >= m_satelliteNodes.GetN() || next_hop >= m_satelliteNodes.GetN()) {
         ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node), stoi(result[3]),
                                 prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop);
-        ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(next_hop), stoi(result[3]),
-                                prefixReverse, nodes.Get(current_node), stoi(result[4]), m_cur_next_hop);
       } else {
         ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteISL, nodes.Get(current_node), stoi(result[3]),
                                 prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop);
@@ -601,7 +599,7 @@ void NDNSatSimulator::ImportDynamicStateSatInstantRetx(ns3::NodeContainer nodes,
         Ptr<Node> node = m_allNodes.Get(consumer_id);
         for (uint32_t i = 0; i < node->GetNApplications(); i++) {
           Ptr<ndn::Consumer> app = DynamicCast<ndn::Consumer>(node->GetApplication(i));
-          ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &ForceTimeout, app);
+          ns3::Simulator::Schedule(ns3::MilliSeconds(ms + 10), &ForceTimeout, app);
         }
       }
       // cout << ms / 1000 << "Add Route: " << current_node << "," << prefix << "," << next_hop << endl;

@@ -75,22 +75,6 @@ ConsumerPingInstantRetx::~ConsumerPingInstantRetx()
 {
 }
 
-// void
-// ConsumerPingInstantRetx::ScheduleNextPacket()
-// {
-//   // double mean = 8.0 * m_payloadSize / m_desiredRate.GetBitRate ();
-//   // std::cout << "next: " << Simulator::Now().ToDouble(Time::S) + mean << "s\n";
-
-//   if (m_firstTime) {
-//     m_sendEvent = Simulator::Schedule(Seconds(0.0), &Consumer::SendPacket, this);
-//     m_firstTime = false;
-//   }
-//   else if (!m_sendEvent.IsRunning())
-//     m_sendEvent = Simulator::Schedule((m_random == 0) ? Seconds(1.0 / m_frequency)
-//                                                       : Seconds(m_random->GetValue()),
-//                                       &Consumer::SendPacket, this);
-// }
-
 void
 ConsumerPingInstantRetx::ScheduleNextPacket()
 {
@@ -100,18 +84,34 @@ ConsumerPingInstantRetx::ScheduleNextPacket()
   if (m_firstTime) {
     m_sendEvent = Simulator::Schedule(Seconds(0.0), &Consumer::SendPacket, this);
     m_firstTime = false;
-  } else if (m_retxSeqs.size()) {
-    // if (!m_sendEvent.IsRunning()) {
-    //   Simulator::Remove(m_sendEvent);
-    // }
-    // std::cout << "Found retx event!" << std::endl;
-    m_sendEvent = Simulator::ScheduleNow(&Consumer::SendPacket, this);
   }
   else if (!m_sendEvent.IsRunning())
     m_sendEvent = Simulator::Schedule((m_random == 0) ? Seconds(1.0 / m_frequency)
                                                       : Seconds(m_random->GetValue()),
                                       &Consumer::SendPacket, this);
 }
+
+// void
+// ConsumerPingInstantRetx::ScheduleNextPacket()
+// {
+//   // double mean = 8.0 * m_payloadSize / m_desiredRate.GetBitRate ();
+//   // std::cout << "next: " << Simulator::Now().ToDouble(Time::S) + mean << "s\n";
+
+//   if (m_firstTime) {
+//     m_sendEvent = Simulator::Schedule(Seconds(0.0), &Consumer::SendPacket, this);
+//     m_firstTime = false;
+//   } else if (m_retxSeqs.size()) {
+//     // if (!m_sendEvent.IsRunning()) {
+//     //   Simulator::Remove(m_sendEvent);
+//     // }
+//     // std::cout << "Found retx event!" << std::endl;
+//     m_sendEvent = Simulator::ScheduleNow(&Consumer::SendPacket, this);
+//   }
+//   else if (!m_sendEvent.IsRunning())
+//     m_sendEvent = Simulator::Schedule((m_random == 0) ? Seconds(1.0 / m_frequency)
+//                                                       : Seconds(m_random->GetValue()),
+//                                       &Consumer::SendPacket, this);
+// }
 
 void
 ConsumerPingInstantRetx::SetRandomize(const std::string& value)

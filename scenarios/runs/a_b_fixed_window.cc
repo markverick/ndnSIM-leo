@@ -32,7 +32,7 @@ public:
 
     cout << "Setting up FIB schedules..."  << endl;
 
-    ImportDynamicStateSatInstantRetx(m_allNodes, m_satellite_network_routes_dir, m_node1_id, m_node2_id);
+    ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
 
     cout << "Starting the simulation"  << endl;
     Simulator::Stop(Seconds(200));

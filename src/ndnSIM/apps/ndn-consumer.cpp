@@ -110,20 +110,18 @@ Consumer::GetRetxTimer() const
 void
 Consumer::ForceTimeout()
 {
-  Time now = Simulator::Now();
-  Time rto = m_rtt->RetransmitTimeout();
-  // m_retxSeqs.clear();
   while (!m_seqTimeouts.empty()) {
     SeqTimeoutsContainer::index<i_timestamp>::type::iterator entry =
       m_seqTimeouts.get<i_timestamp>().begin();
     uint32_t seqNo = entry->seq;
     m_seqTimeouts.get<i_timestamp>().erase(entry);
-    OnTimeout(seqNo);
+    m_retxSeqs.insert(seqNo);
+    // OnTimeout(seqNo);
     // m_rtt->IncreaseMultiplier(); // Double the next RTO
     // m_rtt->SentSeq(SequenceNumber32(seqNo),
     //               1); // make sure to disable RTT calculation for this sample
     // m_retxSeqs.insert(seqNo);
-    // SendPacket();
+    Simulator::Schedule(MilliSeconds(1), &Consumer::SendPacket, this);
   }
 }
 

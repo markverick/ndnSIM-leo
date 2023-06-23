@@ -73,8 +73,6 @@ ratios = []
 #         '1e-5',
 #         '3e-5',
 #         '1e-4',
-#         '3e-4',
-#         '1e-3',
 #         ]
 # ratios = ['1e-7']
 # pairs = [
@@ -84,10 +82,10 @@ chosen_pairs = []
 for nc in ndn_clients:
     for p in pairs:
         if (len(ratios) == 0):
-            chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "free", 0, 0, p[2]))
+            chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "paired", 0, 0, p[2]))
         else:
             for r in ratios:
-                chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "free", float(r), float(r), p[2]))
+                chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "paired", float(r), float(r), p[2]))
 
 
 def get_ndn_run_list():
