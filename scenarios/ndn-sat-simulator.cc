@@ -38,6 +38,7 @@
 #include "ns3/point-to-point-laser-net-device.h"
 #include "ns3/ipv4.h"
 #include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
+#include "ndn-cxx/name.hpp"
 #include "ns3/ndn-leo-stack-helper.h"
 #include "ns3/ndnSIM/apps/ndn-consumer.hpp"
 #include "ndn-sat-simulator.h"
@@ -55,6 +56,48 @@ void printFibTable(Ptr<Node> node) {
   for (auto it = fib.begin(); it != fib.end(); it++) {
     for (auto i = it->getNextHops().begin(); i != it->getNextHops().end(); i++) {
       cout << "  " << it->getPrefix() << "," << i->getFace().getId() << endl;
+    }
+  }
+}
+
+void retransmitPitTable(Ptr<Node> node, string prefix) {
+  Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
+  // std::shared_ptr<nfd::Forwarder> fw = ndn->getForwarder();
+  // ndn::nfd::pit::Pit pit = fw->getPit();
+  // ndn::nfd::fib::Fib fib = fw->getFib();
+
+  auto fw = ndn->getForwarder();
+  auto &pit = fw->getPit();
+  auto &fib = fw->getFib();
+  ndn::Name pf(prefix);
+  if (pit.size() <= 1) return;
+  cout << Simulator::Now().GetSeconds() << " -- Retx Node: " << node->GetId() << endl;
+  for (auto it = pit.begin(); it != pit.end(); it++) {
+    // Don't do anything if we're not interested in that entry
+    ndn::Name fullName(it->getName());
+    if (!pf.isPrefixOf(fullName)) {
+      continue;
+    }
+    // Default life time is 2s
+    ndn::time::milliseconds interestLifeTime(2000);
+    // Remove all out records
+    it->clearOutRecords();
+    // for (auto i = it->getOutRecords().begin(); i != it->getOutRecords().end(); i++) {
+    //   cout << "  PIT REMOVED - " << fullName << "," << i->getFace().getId() << endl;
+    //   cout << "REMOVED?" << endl;
+    //   it->deleteOutRecord(i->getFace());
+    //   cout << "REMOVED!" << endl;
+    // }
+    // cout << "  PIT CLEARED" << endl;
+    // Find the match in the fib, return empty if no match so don't have to check
+    auto &fi = fib.findLongestPrefixMatch(fullName);
+    // Re-add out records from FIB
+    for (auto i : fi.getNextHops()) {
+      cout << "  PIT ADDED - " << fullName << "," << i.getFace().getId() << endl;
+      ndn::Interest interest = ndn::Interest(fullName, interestLifeTime);
+      it->insertOrUpdateOutRecord(i.getFace(), interest);
+      // Retransmit interest based on what's left in the pit with new face from fib.
+      i.getFace().sendInterest(interest);
     }
   }
 }
@@ -350,7 +393,7 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
     shared_ptr<ns3::ndn::Face> prevCurFace, prevNextFace;
     Address prevDest;
     tie(prevCurFace, prevNextFace, prevDest) = (*curNextHop)[p];
-    ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevCurFace);
+    // ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevCurFace);
     ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, face, prevCurFace, prevNextFace, prevDest);
     // RemoveExistingLink(node, prefix, face, prevFace, prevDest);
   }
@@ -409,7 +452,7 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, int deviceId,
     // Remove existing route
     if (curNextHop->find(p) != curNextHop->end()) {
       tie(prevCurFace, prevNextFace, prevDest) = (*curNextHop)[p];
-      ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevCurFace);
+      // ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevCurFace);
       ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, gsFace, prevCurFace, prevNextFace, prevDest);
     }
     ns3::Simulator::Schedule(ns3::Seconds(HANDOVER_DURATION), &AddRouteCustom, node, prefix, gsFace, 1);
@@ -424,7 +467,7 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, int deviceId,
     // sat -> gs
     if (curNextHop->find(p) != curNextHop->end()) {
       tie(prevCurFace, prevNextFace, prevDest) = (*curNextHop)[p];
-      ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevCurFace);
+      // ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevCurFace);
       ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, satFace, prevCurFace, prevNextFace, prevDest);
     }
     ns3::Simulator::Schedule(ns3::Seconds(HANDOVER_DURATION), &AddRouteCustom, node, prefix, satFace, 1);
@@ -595,13 +638,14 @@ void NDNSatSimulator::ImportDynamicStateSatInstantRetx(ns3::NodeContainer nodes,
       next_hop = stoi(result[2]);;
       // Add AddRoute schedule
       prefix = "/prefix/uid-" + result[1];
-      if (consumer_id == current_node && producer_id == stoi(result[1])) {
-        Ptr<Node> node = m_allNodes.Get(consumer_id);
-        for (uint32_t i = 0; i < node->GetNApplications(); i++) {
-          Ptr<ndn::Consumer> app = DynamicCast<ndn::Consumer>(node->GetApplication(i));
-          ns3::Simulator::Schedule(ns3::MilliSeconds(ms + 10), &ForceTimeout, app);
-        }
-      }
+      // if (consumer_id == current_node && producer_id == stoi(result[1])) {
+      //   Ptr<Node> node = m_allNodes.Get(consumer_id);
+      //   for (uint32_t i = 0; i < node->GetNApplications(); i++) {
+      //     Ptr<ndn::Consumer> app = DynamicCast<ndn::Consumer>(node->GetApplication(i));
+      //     ns3::Simulator::Schedule(ns3::MilliSeconds(ms + 1), &ForceTimeout, app);
+      //   }
+      // }
+      ns3::Simulator::ScheduleWithContext(current_node, ns3::MilliSeconds(ms + 1), &retransmitPitTable, nodes.Get(current_node), prefix);
       // cout << ms / 1000 << "Add Route: " << current_node << "," << prefix << "," << next_hop << endl;
       if (current_node >= m_satelliteNodes.GetN() || next_hop >= m_satelliteNodes.GetN()) {
         ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node), stoi(result[3]),

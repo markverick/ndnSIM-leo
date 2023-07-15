@@ -16,26 +16,26 @@ public:
     m_prefix = prefix2;
     // cout << "PREFIX: " << prefix2 << endl;
     // Consumer
-    ndn::AppHelper consumerHelper("ns3::ndn::ConsumerPingInstantRetx");
+    ndn::AppHelper consumerHelper("ns3::ndn::ConsumerFixedWindow");
     // Consumer will request /prefix/0, /prefix/1, ...
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("Frequency", StringValue("1000"));
-    consumerHelper.SetAttribute("RetxTimer", StringValue("10000s"));
+    consumerHelper.SetAttribute("Window", StringValue("10"));
+    consumerHelper.SetAttribute("PayloadSize", StringValue("1380"));
     consumerHelper.Install(node1).Start(Seconds(0.5)); // first node
 
     // Producer
     ndn::AppHelper producerHelper("ns3::ndn::Producer");
     // Producer will reply to all requests starting with /prefix
     producerHelper.SetPrefix(m_prefix);
-    producerHelper.SetAttribute("PayloadSize", StringValue("0"));
+    producerHelper.SetAttribute("PayloadSize", StringValue("1380"));
     producerHelper.Install(node2).Start(Seconds(0.5)); // last node
 
     cout << "Setting up FIB schedules..."  << endl;
 
-    ImportDynamicStateSatInstantRetx(m_allNodes, m_satellite_network_routes_dir, m_node1_id, m_node2_id, 40);
+    ImportDynamicStateSatInstantRetx(m_allNodes, m_satellite_network_routes_dir, m_node1_id, m_node2_id);
 
     cout << "Starting the simulation"  << endl;
-    Simulator::Stop(Seconds(40));
+    Simulator::Stop(Seconds(200));
     // int start_index = -1;
     // for (int i = m_satellite_network_dir.size() - 1; i >= 0; i--) {
     //   char c = m_satellite_network_dir[i];
