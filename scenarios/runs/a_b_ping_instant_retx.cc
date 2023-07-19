@@ -8,6 +8,9 @@ class ScenarioSim : public NDNSatSimulator {
 public:
   using NDNSatSimulator::NDNSatSimulator;
   void Run() {
+    // Choosing forwarding strategy
+    std::cout << "  > Installing forwarding strategy" << std::endl;
+    ndn::StrategyChoiceHelper::Install(m_allNodes, "/", "/localhost/nfd/strategy/best-route");
     std::string prefix = "/prefix/uid-";
     Ptr<Node> node1 = m_allNodes.Get(m_node1_id);
     Ptr<Node> node2 = m_allNodes.Get(m_node2_id);
@@ -16,7 +19,7 @@ public:
     m_prefix = prefix2;
     // cout << "PREFIX: " << prefix2 << endl;
     // Consumer
-    ndn::AppHelper consumerHelper("ns3::ndn::ConsumerPingInstantRetx");
+    ndn::AppHelper consumerHelper("ns3::ndn::ConsumerPing");
     // Consumer will request /prefix/0, /prefix/1, ...
     consumerHelper.SetPrefix(m_prefix);
     consumerHelper.SetAttribute("Frequency", StringValue("1000"));
@@ -32,10 +35,10 @@ public:
 
     cout << "Setting up FIB schedules..."  << endl;
 
-    ImportDynamicStateSatInstantRetx(m_allNodes, m_satellite_network_routes_dir, m_node1_id, m_node2_id, 40);
+    ImportDynamicStateSatInstantRetx(m_allNodes, m_satellite_network_routes_dir, m_node1_id, m_node2_id);
 
     cout << "Starting the simulation"  << endl;
-    Simulator::Stop(Seconds(40));
+    Simulator::Stop(Seconds(200));
     // int start_index = -1;
     // for (int i = m_satellite_network_dir.size() - 1; i >= 0; i--) {
     //   char c = m_satellite_network_dir[i];

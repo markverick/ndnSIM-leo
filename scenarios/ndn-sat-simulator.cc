@@ -42,6 +42,7 @@
 #include "ns3/ndn-leo-stack-helper.h"
 #include "ns3/ndnSIM/apps/ndn-consumer.hpp"
 #include "ndn-sat-simulator.h"
+#include "ns3/nack-retx-strategy.h"
 
 namespace ns3 {
 
@@ -102,6 +103,27 @@ void retransmitPitTable(Ptr<Node> node, string prefix) {
   }
 }
 
+void sendNackOrRetransmit(Ptr<Node> node, const ndn::nfd::FaceEndpoint& faceEndPoint, string prefix) {
+  Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
+  auto fw = ndn->getForwarder();
+  auto &pit = fw->getPit();
+  auto &fib = fw->getFib();
+  ndn::Name pf(prefix);
+  if (pit.size() <= 1) return;
+  cout << Simulator::Now().GetSeconds() << " -- Retx Node: " << node->GetId() << endl;
+  for (ndn::nfd::Pit::const_iterator it = pit.begin(); it != pit.end(); it++) {
+    // Don't do anything if we're not interested in that entry
+    ndn::Name fullName(it->getName());
+    if (!pf.isPrefixOf(fullName)) {
+      continue;
+    }
+    nfd::fw::NackRetxStrategy strat(*fw, "/localhost/nfd/strategy/nack-retx");
+    // shared_ptr<ndn::nfd::pit::Entry> entry = (*it);
+    strat.sendNackOrForward(it->getInterest(), faceEndPoint, pit.find(it->getInterest()));
+  }
+
+}
+
 NDNSatSimulator::NDNSatSimulator(string config) {
   ReadConfig(config);
   // setting default parameters for PointToPoint links and channels
@@ -150,10 +172,6 @@ NDNSatSimulator::NDNSatSimulator(string config) {
   ndnHelper.Install(m_allNodes);
 
   std::cout << "  > Installed NDN stacks" << std::endl;
-
-  // Choosing forwarding strategy
-  std::cout << "  > Installing forwarding strategy" << std::endl;
-  ndn::StrategyChoiceHelper::Install(m_allNodes, "/", "/localhost/nfd/strategy/best-route");
 }
 
 std::string NDNSatSimulator::getConfigParamOrDefault(std::string key, std::string default_value) {
@@ -367,6 +385,8 @@ void RemoveExistingLink(Ptr<Node> node, string prefix, shared_ptr<ns3::ndn::Face
   if (prevCurFace->getLinkType() == ::ndn::nfd::LINK_TYPE_AD_HOC) {
     ns3::ndn::NetDeviceTransport* ts = dynamic_cast<ns3::ndn::NetDeviceTransport*>(prevNextFace->getTransport());
     ts->RemoveNextDataHop(dest);
+    ns3::Simulator::Schedule(ns3::MilliSeconds(1), &sendNackOrRetransmit, node, ndn::nfd::FaceEndpoint(*prevCurFace, prevCurFace->getId()), prefix);
+    // ns3::Simulator::Schedule(ns3::MilliSeconds(1), &retransmitPitTable, node, prefix);
     // ns3::Simulator::Schedule(ns3::Seconds(0), &RemoveNextDataHop, ts, dest);
   }
 }

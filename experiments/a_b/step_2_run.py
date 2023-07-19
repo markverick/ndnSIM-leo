@@ -57,6 +57,12 @@ for run in get_ndn_run_list():
             "./waf --run=\"a_b_ping_instant_retx --run_dir='" + run["name"] + "'\" "
             "2>&1 | tee '" + 'experiments/a_b/' + logs_ns3_dir + "/console.txt'"
         )
+    elif (run["ndn_client"] == "PingNackRetx"):
+        commands_to_run.append(
+            "cd ../../; "
+            "./waf --run=\"a_b_ping_nack_retx --run_dir='" + run["name"] + "'\" "
+            "2>&1 | tee '" + 'experiments/a_b/' + logs_ns3_dir + "/console.txt'"
+        ) #NS_LOG=ndn-cxx.nfd.NackRetxStrategy
     elif (run["ndn_client"] == "FixedWindow"):
         commands_to_run.append(
             "cd ../../; "
