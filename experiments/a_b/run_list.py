@@ -50,11 +50,11 @@ ds_alg['free'] = "starlink_550_isls_plus_grid_ground_stations_4_different_orbits
 
 ds = "dynamic_state_100ms_for_200s"
 # cc_list = ["TcpNewReno", "TcpCubic", "TcpVegas","TcpBbr"]
-# ndn_clients = ["PingNackRetx", "PingInstantRetx", "Ping", "FixedWindow"]
-ndn_clients = ["PingNackRetx"]
+# ndn_clients = ["PingNackRetx", "PingInstantRetx", "Ping", "FixedWindow", "FixedWindowRetx"]
+ndn_clients = ["FixedWindowRetx"]
 pairs = [
-    # (1584 + 0, 1584 + 1, 'Sao-Paulo 11000k'),
-    (1584 + 2, 1584 + 3, 'San-Jose 11000k'),
+    (1584 + 0, 1584 + 1, 'Sao-Paulo 11000k'),
+    # (1584 + 2, 1584 + 3, 'San-Jose 11000k'),
     # (1584 + 4, 1584 + 5, 'Montreal 11000k'),
     # (1584 + 6, 1584 + 7, 'Victoria 11000k'),
     # (1584 + 0, 1584 + 8, 'Sao-Paulo 5500k'),
@@ -62,18 +62,18 @@ pairs = [
     # (1584 + 4, 1584 + 10, 'Montreal 5500k'),
     # (1584 + 6, 1584 + 11, 'Victoria 5500k'),
 ]
-ratios = []
-# ratios = [
-#         # '0',
-#         # '3e-8',
-#         # '1e-7',
-#         # '3e-7',
-#         # '1e-6',
-#         # '3e-6',
-#         # '1e-5',
-#         # '3e-5',
-#         # '1e-4',
-#         ]
+# ratios = []
+ratios = [
+        '0',
+        # '3e-8',
+        # '1e-7',
+        # '3e-7',
+        # '1e-6',
+        # '3e-6',
+        # '1e-5',
+        # '3e-5',
+        # '1e-4',
+        ]
 # ratios = ['1e-7']
 # pairs = [
 #     (1584 + 2, 1584 + 3, 'San-Jose 11000k'),

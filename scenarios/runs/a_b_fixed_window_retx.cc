@@ -10,7 +10,7 @@ public:
   void Run() {
     // Choosing forwarding strategy
     std::cout << "  > Installing forwarding strategy" << std::endl;
-    ndn::StrategyChoiceHelper::Install(m_allNodes, "/", "/localhost/nfd/strategy/best-route");
+    ndn::StrategyChoiceHelper::Install(m_allNodes, "/", "/localhost/nfd/strategy/nack-retx");
     std::string prefix = "/prefix/uid-";
     Ptr<Node> node1 = m_allNodes.Get(m_node1_id);
     Ptr<Node> node2 = m_allNodes.Get(m_node2_id);

@@ -22,16 +22,16 @@ public:
     ndn::AppHelper consumerHelper("ns3::ndn::ConsumerPing");
     // Consumer will request /prefix/0, /prefix/1, ...
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("Frequency", StringValue("1"));
+    consumerHelper.SetAttribute("Frequency", StringValue("1000"));
     consumerHelper.SetAttribute("RetxTimer", StringValue("10000s"));
-    consumerHelper.Install(node1).Start(Seconds(192.5) + MilliSeconds(751)); // first node
+    consumerHelper.Install(node1).Start(Seconds(0.5)); // first node
 
     // Producer
     ndn::AppHelper producerHelper("ns3::ndn::Producer");
     // Producer will reply to all requests starting with /prefix
     producerHelper.SetPrefix(m_prefix);
     producerHelper.SetAttribute("PayloadSize", StringValue("1"));
-    producerHelper.Install(node2).Start(Seconds(192.5) + MilliSeconds(751)); // last node
+    producerHelper.Install(node2).Start(Seconds(0.5)); // last node
 
     cout << "Setting up FIB schedules..."  << endl;
 
