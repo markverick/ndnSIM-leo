@@ -33,17 +33,24 @@ python step_1_generate_runs.py
 python step_2_run.py
 ```
 ## Modifying run list
-The run list is located at `experiments/a_b/run_list.py`. You can change the following:
+The run list is located at `experiments/a_b/run_list.py`. Due to the recent major change to the code base, only a_b scenario is currently provided, meaning that the multiple consumers scenarios are temporary disabled.
+You can change the following:
 1) Dynamic states and GSL generation algorithm
 2) NDN scenarios (Consumer/Producer nodes, Ping, Window, Multiple Consumers)
-3) Set the loss rate, bandwidth and queue size
+3) Set the loss rate, link bandwidth and packet queue size
 4) Set the simulation time
 
 ## NDN clients
+Additional parameters such as frequency, window size, and consumers/producer pairs can be adjusted in the corresponding file
 
-1) Ping - `experiments/scenarios/runs/a_b_ping.cc`: one client sends `Frequency` interest per second with no retransmission timer. Use vanilla `best-route` forwarding strategy and modified `ConsumerPing' application (disable retransmission)
-2) PingInstantRetx - `experiments/scenarios/runs/a_b_ping_instant_retx.cc`:  one client sends `Frequency` interest per second with no retransmission timer. The cleint will do instant retransmission after it detects a satellite handover. Use vanilla `best-route` forwarding strategy and modified `ConsumerPing' application (disable retransmission timer)
+1) Ping - `experiments/scenarios/runs/a_b_ping.cc`: one client sends `Frequency` interest per second with no retransmission timer. Segment number is unique, and is incrementing by one per interest transmission. Use vanilla `best-route` forwarding strategy and modified `ConsumerPing' application (disabled retransmission)
+2) PingInstantRetx - `experiments/scenarios/runs/a_b_ping_instant_retx.cc`:  one client sends `Frequency` interest per second with no retransmission timer. The client will do instant retransmission on every pending interest when it detects a satellite handover. Use vanilla `best-route` forwarding strategy and modified `ConsumerPing' application (disable retransmission timer)
 3) PingNackRetx - `experiments/scenarios/runs/a_b_ping_nack_retx.cc`:  one client sends `Frequency` interest per second with no retransmission timer. The cleint will do instant retransmission after it detects a satellite handover. Use custom `nack-retx` forwarding strategy and modified `ConsumerPing' application (disable retransmission timer). The satellites in the network will react to NACK to find the alternative path.
 4) FixedWindow - `experiments/scenarios/runs/a_b_fixed_window.cc`: one client sends interests, allowing fixed-window pending interests. Use default rtt estimator for retransmission timer. Use custom `ConsumerFixedWindow` client
 5) FixedWindowRetx - `experiments/scenarios/runs/a_b_fixed_window_retx.cc`: just like Fixed window but with `nack-retx` strategy.
 
+## TODO:
+- Reimplementing the forwarding hint mechanism
+- Add additional `ConsumerPingNoRetx` client instead of modifying the existing `ConsumerPing` client
+- Improve the forwarding strategy to allow more cases of synchronous multi-path forwarding
+- Implement and evaluate proposed hop-by-hop congestion control schemes
