@@ -36,22 +36,42 @@ dynamic_state = "dynamic_state_" + str(dynamic_state_update_interval_ms) + "ms_f
 isl_error_rate = 0
 gsl_error_rate = 0
 
-# Chosen pairs:
-# > Rio de Janeiro (1174) to St. Petersburg (1229)
-# > Manila (1173) to Dalian (1241)
-# > Istanbul (1170) to Nairobi (1252)
-# > Paris (1180 (1156 for the Paris-Moscow GS relays)) to Moscow (1177 (1232 for the Paris-Moscow GS relays))
-# net_paired = "starlink_550_isls_plus_grid_ground_stations_4_different_orbits_algorithm_paired_many_only_over_isls"
-# net_free = "starlink_550_isls_plus_grid_ground_stations_4_different_orbits_fast_algorithm_free_one_only_over_isls"
+# dynamic state algorithm
+# paired: each ground station is connected to exactly one satellite
+# free: each ground station can connect to any satellite that yields the shortest path
 
 ds_alg = {}
 ds_alg['paired'] = "starlink_550_isls_plus_grid_ground_stations_4_different_orbits_algorithm_paired_many_only_over_isls"
 ds_alg['free'] = "starlink_550_isls_plus_grid_ground_stations_4_different_orbits_fast_algorithm_free_one_only_over_isls"
 
+# dynamic state sub folder in scenarios/data/<dynamic_state>/<ds>
 ds = "dynamic_state_100ms_for_200s"
-# cc_list = ["TcpNewReno", "TcpCubic", "TcpVegas","TcpBbr"]
-# ndn_clients = ["PingNackRetx", "PingInstantRetx", "Ping", "FixedWindow", "FixedWindowRetx"]
-ndn_clients = ["FixedWindowRetx"]
+
+# congestion control scheme list, WIP, currently unused
+cc_list = ["TcpNewReno", "TcpCubic", "TcpVegas","TcpBbr"]
+
+# NDN client list. Additional variables such as frequency and coneumers/producers
+# parameters can be adjusted in the corresponding file
+# Ping - experiments/scenarios/runs/a_b_ping.cc: one client constantly sends
+#        interest <Frequency> packets per second with no retransmission timer
+#        Segment number is unique, and is incrementing by one per interest transmission.
+#        Use vanilla best-route forwarding strategy
+#        and a modified `ConsumerPing' application (disabled retransmission)
+# PingInstantRetx - experiments/scenarios/runs/a_b_ping_instant_retx.cc:
+#                   same as Ping but the client will do instant retransmission
+#                   on every pending interest when it detects a satellite handover.
+#                   Use vanilla best-route forwarding strategy and a modified
+#                   `ConsumerPing' application (disabled retransmission timer)
+# PingNackRetx - experiments/scenarios/runs/a_b_ping_nack_retx.cc:
+#                one client sends Frequency interest per second with no
+#                retransmission timer. The cleint will do instant retransmission after it detects a satellite handover. Use custom nack-retx forwarding strategy and modified `ConsumerPing' application (disable retransmission timer). The satellites in the network will react to NACK to find the alternative path.
+# FixedWindow - experiments/scenarios/runs/a_b_fixed_window.cc:
+#               one client sends interests, allowing fixed-window pending interests. Use default rtt estimator for retransmission timer. Use custom ConsumerFixedWindow client
+# FixedWindowRetx - experiments/scenarios/runs/a_b_fixed_window_retx.cc:
+#                   just like Fixed window but with nack-retx strategy.
+ndn_clients = ["PingNackRetx"]
+
+# consumer vs producer pair
 pairs = [
     (1584 + 0, 1584 + 1, 'Sao-Paulo 11000k'),
     # (1584 + 2, 1584 + 3, 'San-Jose 11000k'),
@@ -62,9 +82,11 @@ pairs = [
     # (1584 + 4, 1584 + 10, 'Montreal 5500k'),
     # (1584 + 6, 1584 + 11, 'Victoria 5500k'),
 ]
-# ratios = []
-ratios = [
-        '0',
+
+# loss ratios for burst error model
+ratios = []
+# ratios = [
+        # '0',
         # '3e-8',
         # '1e-7',
         # '3e-7',
@@ -73,11 +95,9 @@ ratios = [
         # '1e-5',
         # '3e-5',
         # '1e-4',
-        ]
-# ratios = ['1e-7']
-# pairs = [
-#     (1584 + 2, 1584 + 3, 'San-Jose 11000k'),
-# ]
+        # ]
+
+# generate pairs of experiments
 chosen_pairs = []
 for nc in ndn_clients:
     for p in pairs:
