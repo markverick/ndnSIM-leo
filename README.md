@@ -54,3 +54,31 @@ Additional parameters such as frequency, window size, and consumers/producer pai
 - Add additional `ConsumerPingNoRetx` client instead of modifying the existing `ConsumerPing` client
 - Improve the forwarding strategy to allow more cases of synchronous multi-path forwarding
 - Implement and evaluate proposed hop-by-hop congestion control schemes
+
+## Acknowledgements
+<img src="cisco-logo-transparent.png" height="150">
+This project is sponsored by Cisco and use the following third party framework:
+
+### [ndnSIM](https://ndnsim.net/current/)
+ndnSIM is an NDN simulation framework that serves as a foundation to implement satellite network specifics. A few patches are needed for compability.
+
+Copyright © 2011-2023 University of California, Los Angeles
+ndnSIM is licensed under conditions of GNU General Public License version 3.0 or later with permission to be linked with NS-3 codebase (GPL 2.0).
+ndnSIM uses a number of third-party software and libraries, licensed under the following licenses:
+- The Boost libraries are licensed under the Boost Software License 1.0
+- any-lite by Martin Moene is licensed under the Boost Software License 1.0
+- optional-lite by Martin Moene is licensed under the Boost Software License 1.0
+- variant-lite by Martin Moene is licensed under the Boost Software License 1.0
+- SQLite is in the public domain
+- The waf build system is licensed under the terms of the BSD license
+- NDN Forwarding Daemon (NFD) licensed under conditions of GNU GPL 3.0+
+ndnSIM also relies on several other third-party libraries with non-GPL compatible license. These library fall into category of “System Libraries” under GPL license definitions and are used in accordance with GPL license exception for “System Libraries”:
+The GPL license is provided below in this file. For more information about these licenses, see https://www.gnu.org/licenses/
+### [Hypatia](https://github.com/snkas/hypatia)
+Hypatia provides useful libraries and ns-3's network models to contribute to our simulator.
+
+Hypatia uses a number of third-party software and libraries, licensed under the following licenses:
+- ns3-sat-sim/ is licensed under the GNU GPL version 2 license.
+- satgenpy/ is licensed under the MIT license.
+- satviz/ is license under the MIT license.
+- paper/ is licensed under the MIT license.
