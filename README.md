@@ -55,13 +55,9 @@ Additional parameters such as frequency, window size, and consumers/producer pai
 - Improve the forwarding strategy to allow more cases of synchronous multi-path forwarding
 - Implement and evaluate proposed hop-by-hop congestion control schemes
 
-## Acknowledgements
-<img src="cisco-logo-transparent.png" height="150">
-This project is sponsored by Cisco and use the following third party framework:
-
+## Tools
 ### [ndnSIM](https://ndnsim.net/current/)
 ndnSIM is an NDN simulation framework that serves as a foundation to implement satellite network specifics. A few patches are needed for compability.
-
 Copyright © 2011-2023 University of California, Los Angeles
 ndnSIM is licensed under conditions of GNU General Public License version 3.0 or later with permission to be linked with NS-3 codebase (GPL 2.0).
 ndnSIM uses a number of third-party software and libraries, licensed under the following licenses:
@@ -82,3 +78,8 @@ Hypatia uses a number of third-party software and libraries, licensed under the 
 - satgenpy/ is licensed under the MIT license.
 - satviz/ is license under the MIT license.
 - paper/ is licensed under the MIT license.
+
+## Acknowledgements
+<img src="cisco-logo-transparent.png" height="150">
+
+This material is based upon work supported by Cisco and the National Science Foundation. Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the sponsors.
