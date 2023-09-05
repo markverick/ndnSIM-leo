@@ -43,6 +43,7 @@ gsl_error_rate = 0
 ds_alg = {}
 ds_alg['paired'] = "starlink_550_isls_plus_grid_ground_stations_4_different_orbits_algorithm_paired_many_only_over_isls"
 ds_alg['free'] = "starlink_550_isls_plus_grid_ground_stations_4_different_orbits_fast_algorithm_free_one_only_over_isls"
+ds_alg['paired_all'] = "starlink_550_isls_plus_grid_ground_stations_4_different_orbits_algorithm_paired_all_pair_over_isls"
 
 # dynamic state sub folder in scenarios/data/<dynamic_state>/<ds>
 ds = "dynamic_state_100ms_for_200s"

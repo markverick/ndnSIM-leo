@@ -68,13 +68,9 @@ public:
 
   void AddGSLs();
 
-  void ImportDynamicStateSat(ns3::NodeContainer nodes, string dname);
+  void ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, int retx, bool complete);
 
-  void ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, double limit);
-
-  void ImportDynamicStateSatInstantRetx(ns3::NodeContainer nodes, string dname, int consumer_id, int producer_id);
-
-  void ImportDynamicStateSatInstantRetx(ns3::NodeContainer nodes, string dname, int consumer_id, int producer_id, double limit);
+  void ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, int retx, bool complete, double limit);
 
   // Input
   std::string m_satellite_network_dir;          //<! Directory containing satellite network information

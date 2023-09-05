@@ -11,7 +11,7 @@ public:
     // Choosing forwarding strategy
     std::cout << "  > Installing forwarding strategy" << std::endl;
     ndn::StrategyChoiceHelper::Install(m_allNodes, "/", "/localhost/nfd/strategy/best-route");
-    std::string prefix = "/prefix/uid-";
+    std::string prefix = "/leo/uid-";
     Ptr<Node> node1 = m_allNodes.Get(m_node1_id);
     Ptr<Node> node2 = m_allNodes.Get(m_node2_id);
     std::string prefix1 = prefix + to_string(m_node1_id);
@@ -20,7 +20,7 @@ public:
     // cout << "PREFIX: " << prefix2 << endl;
     // Consumer
     ndn::AppHelper consumerHelper("ns3::ndn::ConsumerFixedWindow");
-    // Consumer will request /prefix/0, /prefix/1, ...
+    // Consumer will request /leo/0, /leo/1, ...
     consumerHelper.SetPrefix(m_prefix);
     consumerHelper.SetAttribute("Window", StringValue("10"));
     consumerHelper.SetAttribute("PayloadSize", StringValue("1380"));
@@ -35,7 +35,7 @@ public:
 
     cout << "Setting up FIB schedules..."  << endl;
 
-    ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir);
+    ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir, 0, false);
 
     cout << "Starting the simulation"  << endl;
     Simulator::Stop(Seconds(200));
