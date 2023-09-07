@@ -52,22 +52,22 @@ public:
   ~NetDeviceTransport();
 
   void
-  SetNextInterestHop(std::string prefix, Address dest);
+  SetNextHop(Address dest);
 
   void
-  SetNextDataHop(Address dest);
+  AddNextHop(Address dest);
 
   void
-  AddNextDataHop(Address dest);
+  RemoveNextHop(Address dest);
 
   void
-  RemoveNextDataHop(Address dest);
+  ClearNextHop(Address dest);
 
   void
-  ClearNextDataHop(Address dest);
+  ClearNextHop();
 
   bool
-  HasNextDataHop(Address dest);
+  HasNextHop(Address dest);
 
   Ptr<NetDevice>
   GetNetDevice() const;
@@ -92,9 +92,8 @@ private:
   Ptr<NetDevice> m_netDevice; ///< \brief Smart pointer to NetDevice
   Ptr<Node> m_node;
 
-  std::map<std::string, Address> m_next_interest_hop;
   // std::map<std::string, std::set<Address> > m_next_data_hops;
-  std::map<Address, uint16_t> m_next_data_hops;
+  std::map<Address, uint16_t> m_next_hops;
 };
 
 } // namespace ndn

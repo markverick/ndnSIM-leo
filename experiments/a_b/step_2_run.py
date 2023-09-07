@@ -48,7 +48,7 @@ for run in get_ndn_run_list():
     if (run["ndn_client"] == "Ping"):
         commands_to_run.append(
             "cd ../../; "
-            "NS_LOG=ndn.Consumer ./waf --run=\"a_b_ping --run_dir='" + run["name"] + "'\" "
+            "./waf --run=\"a_b_ping --run_dir='" + run["name"] + "'\" "
             "2>&1 | tee '" + 'experiments/a_b/' + logs_ns3_dir + "/console.txt'"
         )
     elif (run["ndn_client"] == "PingInstantRetx"):

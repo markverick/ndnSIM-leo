@@ -46,8 +46,9 @@
 
 namespace ns3 {
 
-int HANDOVER_DURATION = 0.000000001; // in seconds
-int DELAYED_REMOVAL = 0.000000002; // in seconds
+double HANDOVER_DURATION = 0.000000001; // in seconds
+double DELAYED_REMOVAL = 0.000000002; // in seconds
+double MAX_GSL_LENGTH_M = 1089686.4181956202;
 
 void printFibTable(Ptr<Node> node) {
   cout << Simulator::Now().GetSeconds() << " -- Node: " << node->GetId() << endl;
@@ -381,8 +382,8 @@ void NDNSatSimulator::ReadISLs()
     std::cout << "    >> Created " << std::to_string(counter) << " ISL(s)" << std::endl;
 }
 
-void RemoveNextDataHop(ns3::ndn::NetDeviceTransport* ts, Address dest) {
-  ts->RemoveNextDataHop(dest);
+void RemoveNextHop(ns3::ndn::NetDeviceTransport* ts, Address dest) {
+  ts->RemoveNextHop(dest);
 }
 
 void AddRouteCustom(ns3::Ptr<ns3::Node> node, string prefix, shared_ptr<ns3::ndn::Face> face, int32_t metric) {
@@ -395,13 +396,13 @@ void RemoveExistingLink(Ptr<Node> node, string prefix, shared_ptr<ns3::ndn::Face
     ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevCurFace);
   }
   // Remove additional GSl hardware routes
-  if (prevCurFace->getLinkType() == ::ndn::nfd::LINK_TYPE_AD_HOC) {
-    ns3::ndn::NetDeviceTransport* ts = dynamic_cast<ns3::ndn::NetDeviceTransport*>(prevNextFace->getTransport());
-    ts->RemoveNextDataHop(dest);
-    ns3::Simulator::Schedule(ns3::MilliSeconds(1), &sendNackOrRetransmit, node, ndn::nfd::FaceEndpoint(*prevCurFace, prevCurFace->getId()), prefix);
-    // ns3::Simulator::Schedule(ns3::MilliSeconds(1), &retransmitPitTable, node, prefix);
-    // ns3::Simulator::Schedule(ns3::Seconds(0), &RemoveNextDataHop, ts, dest);
-  }
+  // if (prevCurFace->getLinkType() == ::ndn::nfd::LINK_TYPE_AD_HOC) {
+  //   ns3::ndn::NetDeviceTransport* ts = dynamic_cast<ns3::ndn::NetDeviceTransport*>(prevNextFace->getTransport());
+  //   ts->RemoveNextDataHop(dest);
+  //   ns3::Simulator::Schedule(ns3::MilliSeconds(1), &sendNackOrRetransmit, node, ndn::nfd::FaceEndpoint(*prevCurFace, prevCurFace->getId()), prefix);
+  //   // ns3::Simulator::Schedule(ns3::MilliSeconds(1), &retransmitPitTable, node, prefix);
+  //   // ns3::Simulator::Schedule(ns3::Seconds(0), &RemoveNextDataHop, ts, dest);
+  // }
 }
 
 void AddRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
@@ -426,9 +427,7 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
     shared_ptr<ns3::ndn::Face> prevCurFace, prevNextFace;
     Address prevDest;
     tie(prevCurFace, prevNextFace, prevDest) = (*curNextHop)[p];
-    // ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevCurFace);
     ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, face, prevCurFace, prevNextFace, prevDest);
-    // RemoveExistingLink(node, prefix, face, prevFace, prevDest);
   }
   // Get delay value
   Ptr<MobilityModel> senderMobility = node->GetObject<MobilityModel>();
@@ -440,10 +439,42 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
   (*curNextHop)[p] = make_tuple(face, remoteFace, netDevice->GetAddress());
 }
 
+void SetRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
+                string prefix, ns3::Ptr<ns3::Node> otherNode, int otherDeviceId)
+{
+  NS_ASSERT_MSG(deviceId < node->GetNDevices(), "Sorce device ID must be valid");
+  NS_ASSERT_MSG(otherDeviceId < otherNode->GetNDevices(), "Next hop device ID must be valid");
+
+  Ptr<PointToPointLaserNetDevice> netDevice = DynamicCast<PointToPointLaserNetDevice>(node->GetDevice(deviceId));
+  Ptr<PointToPointLaserNetDevice> remoteNetDevice = DynamicCast<PointToPointLaserNetDevice>(otherNode->GetDevice(otherDeviceId));
+  Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
+  Ptr<ns3::ndn::L3Protocol> remoteNdn = otherNode->GetObject<ns3::ndn::L3Protocol>();
+  NS_ASSERT_MSG(ndn != 0, "Ndn stack should be installed on the node");
+
+  shared_ptr<ns3::ndn::Face> face = ndn->getFaceByNetDevice(netDevice);
+  shared_ptr<ns3::ndn::Face> remoteFace = remoteNdn->getFaceByNetDevice(remoteNetDevice);
+  NS_ASSERT_MSG(face != 0, "There is no face associated with the p2p link");
+  // Removing existing route
+  // Remove route -> Add route -> Remove backward link
+  auto p = make_pair(node->GetId(), prefix);
+  // Get delay value
+  Ptr<MobilityModel> senderMobility = node->GetObject<MobilityModel>();
+  Ptr<MobilityModel> receiverMobility = otherNode->GetObject<MobilityModel>();
+  double distance = senderMobility->GetDistanceFrom(receiverMobility);
+  ns3::Simulator::Schedule(ns3::Seconds(HANDOVER_DURATION), &AddRouteCustom, node, prefix, face, distance);
+}
+
 void AddRouteGSL(ns3::Ptr<ns3::Node> node, int deviceId,
                 string prefix, ns3::Ptr<ns3::Node> otherNode, int otherDeviceId, shared_ptr<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address> >> curNextHop)
 {
-  NS_ASSERT_MSG(deviceId < node->GetNDevices(), "Sorce device ID must be valid");
+  // Prevent legacy dynamic state to create more GSLs than needed
+  if (deviceId >= node->GetNDevices()) {
+    deviceId = node->GetNDevices() - 1;
+  }
+  if (otherDeviceId >= otherNode->GetNDevices()) {
+    otherDeviceId = otherNode->GetNDevices() - 1;
+  }
+  NS_ASSERT_MSG(deviceId < node->GetNDevices(), "Source device ID must be valid");
   NS_ASSERT_MSG(otherDeviceId < otherNode->GetNDevices(), "Next hop device ID must be valid");
   // Removing existing route
   ns3::Ptr<ns3::Node> gsNode;
@@ -494,17 +525,11 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, int deviceId,
     // Remove existing route
     if (curNextHop->find(p) != curNextHop->end()) {
       tie(prevCurFace, prevNextFace, prevDest) = (*curNextHop)[p];
-      // ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevCurFace);
       ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, gsFace, prevCurFace, prevNextFace, prevDest);
     }
     ns3::Simulator::Schedule(ns3::Seconds(HANDOVER_DURATION), &AddRouteCustom, node, prefix, gsFace, distance);
-    // ns3::ndn::FibHelper::AddRoute(node, prefix, gsFace, 1);
-    // printFibTable(node);
     // Add the current route for future removal
     (*curNextHop)[p] = make_tuple(gsFace, satFace, gsNetDevice->GetAddress());
-    gsTransport->SetNextInterestHop(prefix, satNetDevice->GetAddress());
-    satTransport->AddNextDataHop(gsNetDevice->GetAddress());
-    // gsTransport->AddNextDataHop(satNetDevice->GetAddress());
   } else {
     // sat -> gs
     if (curNextHop->find(p) != curNextHop->end()) {
@@ -513,11 +538,66 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, int deviceId,
       ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, satFace, prevCurFace, prevNextFace, prevDest);
     }
     ns3::Simulator::Schedule(ns3::Seconds(HANDOVER_DURATION), &AddRouteCustom, node, prefix, satFace, distance);
-    // ns3::ndn::FibHelper::AddRoute(node, prefix, satFace, 1);
     // Add the current route for future removal
     (*curNextHop)[p] = make_tuple(satFace, gsFace, satNetDevice->GetAddress());
-    satTransport->SetNextInterestHop(prefix, gsNetDevice->GetAddress());
-    gsTransport->AddNextDataHop(satNetDevice->GetAddress());
+  }
+}
+
+void SetRouteGSL(ns3::Ptr<ns3::Node> node, int deviceId,
+                string prefix, ns3::Ptr<ns3::Node> otherNode, int otherDeviceId)
+{
+  NS_ASSERT_MSG(deviceId < node->GetNDevices(), "Sorce device ID must be valid");
+  NS_ASSERT_MSG(otherDeviceId < otherNode->GetNDevices(), "Next hop device ID must be valid");
+  // Removing existing route
+  ns3::Ptr<ns3::Node> gsNode;
+  ns3::Ptr<ns3::Node> satNode;
+  Ptr<GSLNetDevice> gsNetDevice;
+  Ptr<GSLNetDevice> satNetDevice;
+  // src node is satellite
+  if (node->GetId() < otherNode->GetId()) {
+    satNode = node;
+    gsNode = otherNode;
+    satNetDevice = DynamicCast<GSLNetDevice>(node->GetDevice(deviceId));
+    gsNetDevice = DynamicCast<GSLNetDevice>(otherNode->GetDevice(otherDeviceId));
+  } else {
+    satNode = otherNode;
+    gsNode = node;
+    satNetDevice = DynamicCast<GSLNetDevice>(otherNode->GetDevice(otherDeviceId));
+    gsNetDevice = DynamicCast<GSLNetDevice>(node->GetDevice(deviceId));
+  }
+
+  // Get GS Information
+  
+  Ptr<ns3::ndn::L3Protocol> gsNdn = gsNode->GetObject<ns3::ndn::L3Protocol>();
+  NS_ASSERT_MSG(gsNdn != 0, "Ndn stack should be installed on the ground station node");
+  shared_ptr<ns3::ndn::Face> gsFace = gsNdn->getFaceByNetDevice(gsNetDevice);
+  NS_ASSERT_MSG(gsFace != 0, "There is no face associated with the gsl link");
+  ns3::ndn::NetDeviceTransport* gsTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>(gsFace->getTransport());
+  NS_ASSERT_MSG(gsTransport != 0, "There is no valid transport associated with the ground station face");
+
+  // Get Sat Information
+  Ptr<ns3::ndn::L3Protocol> satNdn = satNode->GetObject<ns3::ndn::L3Protocol>();
+  NS_ASSERT_MSG(satNdn != 0, "Ndn stack should be installed on the satellite node");
+  shared_ptr<ns3::ndn::Face> satFace = satNdn->getFaceByNetDevice(satNetDevice);
+  NS_ASSERT_MSG(satFace != 0, "There is no face associated with the gsl link");
+  ns3::ndn::NetDeviceTransport* satTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>(satFace->getTransport());
+  NS_ASSERT_MSG(satTransport != 0, "There is no valid transport associated with the ground station face");
+  
+  // Remove route -> Add route -> Remove backward link
+  auto p = make_pair(node->GetId(), prefix);
+  shared_ptr<ns3::ndn::Face> prevCurFace, prevNextFace;
+  Address prevDest;
+  // Get delay value
+  Ptr<MobilityModel> senderMobility = node->GetObject<MobilityModel>();
+  Ptr<MobilityModel> receiverMobility = otherNode->GetObject<MobilityModel>();
+  double distance = senderMobility->GetDistanceFrom(receiverMobility);
+
+  if (node == gsNode) {
+    // gs -> sat
+    ns3::Simulator::Schedule(ns3::Seconds(HANDOVER_DURATION), &AddRouteCustom, node, prefix, gsFace, distance);
+  } else {
+    // sat -> gs
+    ns3::Simulator::Schedule(ns3::Seconds(HANDOVER_DURATION), &AddRouteCustom, node, prefix, satFace, distance);
   }
 }
 
@@ -586,6 +666,67 @@ void NDNSatSimulator::AddGSLs() {
 
 }
 
+void ReinstallGSL(ns3::NodeContainer gsNodes, ns3::NodeContainer satNodes) {
+  map<int, pair<double, Address> > nearestSat;
+  for (Ptr<Node> satNode : satNodes) {
+    Ptr<ns3::ndn::L3Protocol> satNdn = satNode->GetObject<ns3::ndn::L3Protocol>();
+    NS_ASSERT_MSG(satNdn != 0, "Ndn stack should be installed on the satellite node");
+    shared_ptr<ns3::ndn::Face> satFace;
+    // Find the GSL face among all, starting from the last index to optimize
+    int i = satNode->GetNDevices() - 1;
+    while (i >= 0) {
+      satFace = satNdn->getFaceByNetDevice(satNode->GetDevice(i));
+      if (satFace->getLinkType() == ::ndn::nfd::LINK_TYPE_AD_HOC) {
+        break;
+      }
+      i--;
+    }
+    // std::cout << "sat net id: " << i << " / " << satNode->GetNDevices() << std::endl;
+    NS_ASSERT_MSG(satFace != 0, "There is no face associated with the gsl link");
+    ns3::ndn::NetDeviceTransport* satTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>(satFace->getTransport());
+    NS_ASSERT_MSG(satTransport != 0, "There is no valid transport associated with the satellite face");
+    // Clear the next data hop
+    satTransport->ClearNextHop();
+    Ptr<MobilityModel> satMobility = satNode->GetObject<MobilityModel>();
+    Ptr<MobilityModel> gsMobility;
+    for (Ptr<Node> gsNode : gsNodes) {
+      Ptr<ns3::ndn::L3Protocol> gsNdn = gsNode->GetObject<ns3::ndn::L3Protocol>();
+      NS_ASSERT_MSG(gsNdn != 0, "Ndn stack should be installed on the gs node");
+      shared_ptr<ns3::ndn::Face> gsFace = gsNdn->getFaceByNetDevice(gsNode->GetDevice(0));
+      NS_ASSERT_MSG(gsFace != 0, "There is no face associated with the gsl link");
+      ns3::ndn::NetDeviceTransport* gsTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>(gsFace->getTransport());
+      NS_ASSERT_MSG(satTransport != 0, "There is no valid transport associated with the ground station face");
+      gsMobility = gsNode->GetObject<MobilityModel>();
+      // Calculate the GSL distance
+      double distance = satMobility->GetDistanceFrom(gsMobility);
+      if (distance <= MAX_GSL_LENGTH_M) {
+        // Add/set next hop for interest and data when they are in rance
+        satTransport->AddNextHop(gsTransport->GetNetDevice()->GetAddress());
+        // Add to the map if the entry doesn't exist
+        if (nearestSat.find(gsNode->GetId()) == nearestSat.end()) {
+          nearestSat[gsNode->GetId()] = make_pair(distance, satTransport->GetNetDevice()->GetAddress());
+        } else {
+          // Update the distance and the nearest satellite's address
+          if (nearestSat[gsNode->GetId()].first > distance) {
+            nearestSat[gsNode->GetId()] = make_pair(distance, satTransport->GetNetDevice()->GetAddress());
+          }
+        }
+      }
+    }
+  }
+  // Set ground station's next hop based on the nearest satellite
+  for (auto it = nearestSat.begin(); it != nearestSat.end(); it++) {
+    Ptr<Node> gsNode = gsNodes.Get(it->first - satNodes.GetN());
+    NS_ASSERT_MSG(gsNode != 0, "Invalid ground station node");
+    Ptr<ns3::ndn::L3Protocol> gsNdn = gsNode->GetObject<ns3::ndn::L3Protocol>();
+    NS_ASSERT_MSG(gsNdn != 0, "Ndn stack should be installed on the gs node");
+    shared_ptr<ns3::ndn::Face> gsFace = gsNdn->getFaceByNetDevice(gsNode->GetDevice(0));
+    NS_ASSERT_MSG(gsFace != 0, "There is no face associated with the gsl link");
+    ns3::ndn::NetDeviceTransport* gsTransport = dynamic_cast<ns3::ndn::NetDeviceTransport*>(gsFace->getTransport());
+    gsTransport->SetNextHop(it->second.second);
+  }
+}
+
 void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, int retx, bool complete) {
   ImportDynamicStateSat(nodes, dname, retx, complete, -1);
 }
@@ -613,6 +754,8 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
     string prefix;
     int64_t next_hop;
 
+    ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &ReinstallGSL, m_groundStationNodes, m_satelliteNodes);
+  
     // Read each file
     ifstream input(full_path);
     string line;
@@ -631,16 +774,27 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
         ns3::Simulator::ScheduleWithContext(current_node, ns3::MilliSeconds(ms + 1), &retransmitPitTable, nodes.Get(current_node), prefix);
       }
       // cout << ms / 1000 << "Add Route: " << current_node << "," << prefix << "," << next_hop << endl;
-      if (current_node >= m_satelliteNodes.GetN() || next_hop >= m_satelliteNodes.GetN()) {
-        ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node), stoi(result[3]),
-                                prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop);
+
+      if (complete) {
+        if (current_node >= m_satelliteNodes.GetN() || next_hop >= m_satelliteNodes.GetN()) {
+          ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &SetRouteGSL, nodes.Get(current_node), stoi(result[3]),
+                                  prefix, nodes.Get(next_hop), stoi(result[4]));
+        } else {
+          ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &SetRouteISL, nodes.Get(current_node), stoi(result[3]),
+                                  prefix, nodes.Get(next_hop), stoi(result[4]));
+        }
       } else {
-        ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteISL, nodes.Get(current_node), stoi(result[3]),
-                                prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop);
+        if (current_node >= m_satelliteNodes.GetN() || next_hop >= m_satelliteNodes.GetN()) {
+          ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node), stoi(result[3]),
+                                  prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop);
+        } else {
+          ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteISL, nodes.Get(current_node), stoi(result[3]),
+                                  prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop);
+        }
       }
     }
   }
-  std::cout << "import success" << std::endl;
+  std::cout << "Import success" << std::endl;
   std::cout << std::endl;
 }
 

@@ -142,9 +142,6 @@ NetDeviceTransport::doSend(const Block& packet)
   // is compiled after (external ns-3 module)
   auto netDevice = GetNetDevice();
   if (netDevice->IsMulticast()) {
-    // if(netDevice->GetNode()->GetId() == 115) {
-    //   std::cout << Simulator::Now().GetMilliSeconds() << ":: Node: " << netDevice->GetNode()->GetId() << ", Address: " << netDevice->GetIfIndex() << std::endl;
-    // }
     netDevice->Send(ns3Packet, netDevice->GetBroadcast(),
                       L3Protocol::ETHERNET_FRAME_TYPE);
   } else {
@@ -153,24 +150,23 @@ NetDeviceTransport::doSend(const Block& packet)
     if (tlv_type == ::ndn::tlv::Interest) {
       Interest i(block);
       // Only get the first subname
-      std::string prefix = i.getName().getSubName(0, 2).toUri();
+      // std::string prefix = i.getName().getSubName(0, 2).toUri();
       // std::cout << prefix << std::endl;
       // Removing appended sequence number 
       // std::string prefix = i.getName().getPrefix(-1).toUri();
-      if (m_next_interest_hop.find(prefix) != m_next_interest_hop.end()) {
-        if (m_next_interest_hop[prefix] != netDevice->GetAddress()) {
-          netDevice->Send(ns3Packet, m_next_interest_hop[prefix],
-                          L3Protocol::ETHERNET_FRAME_TYPE);
-        }
+      for (auto it = m_next_hops.begin(); it != m_next_hops.end(); it++) {
+        if (it->second > 0)
+          netDevice->Send(ns3Packet->Copy(), it->first,
+                      L3Protocol::ETHERNET_FRAME_TYPE);
       }
     }
     else if (tlv_type == ::ndn::tlv::Data) {
       Data d(block);
-      std::string prefix = d.getName().getSubName(0, 2).toUri();
+      // std::string prefix = d.getName().getSubName(0, 2).toUri();
       // std::cout << prefix << std::endl;
       // std::string prefix = d.getName().getPrefix(-1).toUri();
       // std::cout << Simulator::Now().GetSeconds() << "," << netDevice->GetNode()->GetId() << ", " << m_next_data_hops.size() << std::endl;
-      for (auto it = m_next_data_hops.begin(); it != m_next_data_hops.end(); it++) {
+      for (auto it = m_next_hops.begin(); it != m_next_hops.end(); it++) {
         if (it->second > 0)
           netDevice->Send(ns3Packet->Copy(), it->first,
                       L3Protocol::ETHERNET_FRAME_TYPE);
@@ -196,69 +192,59 @@ NetDeviceTransport::receiveFromNetDevice(Ptr<NetDevice> device,
 
   BlockHeader header;
   packet->RemoveHeader(header);
-  // std::cout << device->GetAddress() << "," << from << "," << to << std::endl;
-  // Dynamic unicast GSL hop
-  // Block block = stripBlockHeader(header);
-  // uint32_t tlv_type = block.type();
-  // if (tlv_type == ::ndn::tlv::Interest) {
-  //   Interest i(block);
-  //   std::string prefix = i.getName().getPrefix(-1).toUri();
-  //   if (prefix.compare("/prefix/uid-1593") == 0) {
-  //     SetNextDataHop(from);
-  //   }
-  // }
-  // End dynamic unicast GSL hop
-
-  this->receive(std::move(header.getBlock()));
+  // Drop if the GSL sender is not in the next hop list
+  if (device->IsMulticast() || HasNextHop(from)) {
+    this->receive(std::move(header.getBlock()));
+  } 
 }
 
 void
-NetDeviceTransport::SetNextInterestHop(std::string prefix, Address dest) {
-  m_next_interest_hop[prefix] = dest;
+NetDeviceTransport::SetNextHop(Address dest) {
+  m_next_hops.clear();
+  m_next_hops[dest] = 1;
 }
 
 void
-NetDeviceTransport::SetNextDataHop(Address dest) {
-  m_next_data_hops.clear();
-  m_next_data_hops[dest] = 1;
-}
-
-void
-NetDeviceTransport::AddNextDataHop(Address dest) {
-  auto it = m_next_data_hops.find(dest);
-  if (it != m_next_data_hops.end()) {
-    m_next_data_hops[dest] += 1;
+NetDeviceTransport::AddNextHop(Address dest) {
+  auto it = m_next_hops.find(dest);
+  if (it != m_next_hops.end()) {
+    m_next_hops[dest] += 1;
   } else {
-    m_next_data_hops[dest] = 1;
+    m_next_hops[dest] = 1;
   }
 }
 
 void
-NetDeviceTransport::RemoveNextDataHop(Address dest) {
-  auto it = m_next_data_hops.find(dest);
-  if (it != m_next_data_hops.end()) {
-    m_next_data_hops[dest] -= 1;
-    if (m_next_data_hops[dest] == 0) {
-      m_next_data_hops.erase(dest);
+NetDeviceTransport::RemoveNextHop(Address dest) {
+  auto it = m_next_hops.find(dest);
+  if (it != m_next_hops.end()) {
+    m_next_hops[dest] -= 1;
+    if (m_next_hops[dest] == 0) {
+      m_next_hops.erase(dest);
     }
   } else {
     std::cout << "  NEGATIVE HOP COUNTS" << std::endl;
-    m_next_data_hops[dest] = -1;
+    m_next_hops[dest] = -1;
   }
 }
 
 void
-NetDeviceTransport::ClearNextDataHop(Address dest) {
-  auto it = m_next_data_hops.find(dest);
-  if (it != m_next_data_hops.end()) {
-    m_next_data_hops.erase(dest);
+NetDeviceTransport::ClearNextHop(Address dest) {
+  auto it = m_next_hops.find(dest);
+  if (it != m_next_hops.end()) {
+    m_next_hops.erase(dest);
   }
 }
 
+void
+NetDeviceTransport::ClearNextHop() {
+  m_next_hops.clear();
+}
+
 bool
-NetDeviceTransport::HasNextDataHop(Address dest) {
-  auto it = m_next_data_hops.find(dest);
-  if (it != m_next_data_hops.end()) {
+NetDeviceTransport::HasNextHop(Address dest) {
+  auto it = m_next_hops.find(dest);
+  if (it != m_next_hops.end()) {
     return true;
   }
   return false;
