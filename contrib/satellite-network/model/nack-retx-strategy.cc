@@ -62,7 +62,11 @@ NackRetxStrategy::getStrategyName()
 }
 
 void NackRetxStrategy::sendNackOrForward(const Interest& interest, const FaceEndpoint& faceEndpoint, const shared_ptr<pit::Entry>& pitEntry) {
-  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
+  // Don't use forwarding hint when handling NACK
+  Interest interestNoHint(interest);
+  const_cast<Interest&>(interestNoHint).setForwardingHint({});
+  const pit::Entry pitEntryNoHint(interestNoHint);
+  const fib::Entry& fibEntry = this->lookupFib(pitEntryNoHint);
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
   auto it = nexthops.end();
 
@@ -73,7 +77,7 @@ void NackRetxStrategy::sendNackOrForward(const Interest& interest, const FaceEnd
   // The only hop is the incoming face, send nack
   if (it == nexthops.end()) {
     NFD_LOG_DEBUG(interest << " from=" << faceEndpoint << " noNextHop");
-    std::cout << "nack," << interest.getName().getSubName(-1) << "," << ns3::Simulator::Now().GetMicroSeconds() << std::endl;
+    std::cout << "nack," << interest.getName() << "," << ns3::Simulator::Now().GetMicroSeconds() << std::endl;
     // std::cout << "OG NACK SENT: " << interest << " from=" << ingress << " noNextHop" << std::endl;
     lp::NackHeader nackHeader;
     nackHeader.setReason(lp::NackReason::NO_ROUTE);
@@ -91,7 +95,11 @@ void NackRetxStrategy::sendNackOrForward(const Interest& interest, const FaceEnd
 }
 
 void NackRetxStrategy::sendNackOrForward(const Interest& interest, const shared_ptr<pit::Entry>& pitEntry) {
-  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
+  // Don't use forwarding hint when handling NACK
+  Interest interestNoHint(interest);
+  const_cast<Interest&>(interestNoHint).setForwardingHint({});
+  const pit::Entry pitEntryNoHint(interestNoHint);
+  const fib::Entry& fibEntry = this->lookupFib(pitEntryNoHint);
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
   auto it = nexthops.end();
 
@@ -124,7 +132,7 @@ void NackRetxStrategy::sendNackOrForward(const Interest& interest, const shared_
     pitEntry->insertOrUpdateOutRecord(outFace, interest);
     std::cout << "retrans," << interest.getName().getSubName(-1) << "," << ns3::Simulator::Now().GetMicroSeconds() << std::endl;
     // std::cout << "RETRANS SENT: " << ingress.face.getId() << " -> " << outFace.getId() << " of " << interest.getInterestLifetime() << std::endl;
-    NFD_LOG_DEBUG(interest << " newPitEntry-to=" << outFace.getId());
+    NFD_LOG_DEBUG(interest << " retrans, newPitEntry-to=" << outFace.getId());
     // Reset the expiry timer
     this->setExpiryTimer(pitEntry, time::milliseconds(2000));
     this->sendInterest(interest, outFace, pitEntry);
@@ -181,7 +189,7 @@ void
 NackRetxStrategy::afterReceiveNack(const lp::Nack& nack, const FaceEndpoint& ingress,
                                     const shared_ptr<pit::Entry>& pitEntry)
 {
-  // std::cout << "NACK RECEIVED: " << nack.getInterest().getName() << std::endl;
+  std::cout << "NACK RECEIVED: " << nack.getInterest().getName() << std::endl;
   // Try to retransmit or backtrack to retransmit
   if (nack.getReason() == lp::NackReason::NO_ROUTE) {
     // We don't know which inFace triggers this nack because they are all aggregated

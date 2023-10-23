@@ -11,7 +11,7 @@ public:
     // Choosing forwarding strategy
     std::cout << "  > Installing forwarding strategy" << std::endl;
     ndn::StrategyChoiceHelper::Install(m_allNodes, "/", "/localhost/nfd/strategy/best-route");
-    std::string prefix = "/leo/uid-";
+    std::string prefix = "/leo/";
     Ptr<Node> node1 = m_allNodes.Get(m_node1_id);
     Ptr<Node> node2 = m_allNodes.Get(m_node2_id);
     std::string prefix1 = prefix + to_string(m_node1_id);

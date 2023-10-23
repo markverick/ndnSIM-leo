@@ -70,7 +70,9 @@ cc_list = ["TcpNewReno", "TcpCubic", "TcpVegas","TcpBbr"]
 #               one client sends interests, allowing fixed-window pending interests. Use default rtt estimator for retransmission timer. Use custom ConsumerFixedWindow client
 # FixedWindowRetx - experiments/scenarios/runs/a_b_fixed_window_retx.cc:
 #                   just like Fixed window but with nack-retx strategy.
-ndn_clients = ["Ping"]
+# TestHint - experiments/scenarios/runs/a_b_test_hint.cc:
+#            for testing a single instant of an interest with a forwarding hint
+ndn_clients = ["TestHint"]
 
 # consumer vs producer pair
 pairs = [
@@ -103,10 +105,10 @@ chosen_pairs = []
 for nc in ndn_clients:
     for p in pairs:
         if (len(ratios) == 0):
-            chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "paired", 0, 0, p[2]))
+            chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "paired_all", 0, 0, p[2]))
         else:
             for r in ratios:
-                chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "paired", float(r), float(r), p[2]))
+                chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "paired_all", float(r), float(r), p[2]))
 
 
 def get_ndn_run_list():

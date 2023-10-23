@@ -1,6 +1,7 @@
 // 3nodes_test.cpp
 #include "../ndn-sat-simulator.h"
 #include "ns3/basic-simulation.h"
+#include <sys/resource.h>
 
 namespace ns3 {
 
@@ -11,7 +12,7 @@ public:
     // Choosing forwarding strategy
     std::cout << "  > Installing forwarding strategy" << std::endl;
     ndn::StrategyChoiceHelper::Install(m_allNodes, "/", "/localhost/nfd/strategy/best-route");
-    std::string prefix = "/leo/uid-";
+    std::string prefix = "/leo/";
     Ptr<Node> node1 = m_allNodes.Get(m_node1_id);
     Ptr<Node> node2 = m_allNodes.Get(m_node2_id);
     std::string prefix1 = prefix + to_string(m_node1_id);
@@ -22,20 +23,20 @@ public:
     ndn::AppHelper consumerHelper("ns3::ndn::ConsumerPing");
     // Consumer will request /leo/0, /leo/1, ...
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("Frequency", StringValue("1000"));
+    consumerHelper.SetAttribute("Frequency", StringValue("0.1"));
     consumerHelper.SetAttribute("RetxTimer", StringValue("10000s"));
-    consumerHelper.Install(node1).Start(Seconds(0.5)); // first node
+    consumerHelper.Install(node1).Start(Seconds(0)); // first node
 
     // Producer
     ndn::AppHelper producerHelper("ns3::ndn::Producer");
     // Producer will reply to all requests starting with prefix
     producerHelper.SetPrefix(m_prefix);
     producerHelper.SetAttribute("PayloadSize", StringValue("0"));
-    producerHelper.Install(node2).Start(Seconds(0.5)); // last node
+    producerHelper.Install(node2).Start(Seconds(0)); // last node
 
     cout << "Setting up FIB schedules..."  << endl;
 
-    ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir, 0, false);
+    ImportDynamicStateSat(m_allNodes, m_satellite_network_routes_dir, 0, true);
 
     cout << "Starting the simulation"  << endl;
     Simulator::Stop(Seconds(200));
