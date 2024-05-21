@@ -62,7 +62,22 @@ void printFibTable(Ptr<Node> node) {
   }
 }
 
+void sendInterestWithHint(Ptr<Node> gsNode, ndn::Interest interest, std::string hint) {
+  // NS_ASSERT_MSG(gsNode->GetId() < m_satellites.size(), "Ground station ID is invalid");
+  // Delegation List
+  if (hint.size() > 0) {
+    vector<ndn::Name> del;
+    del.emplace_back(ndn::Name(hint));
+    interest.setForwardingHint(del);
+  }
+  Ptr<ns3::ndn::L3Protocol> ndn = gsNode->GetObject<ns3::ndn::L3Protocol>();
+  ndn->getFaceByNetDevice(gsNode->GetDevice(0))->sendInterest(interest);
+  std::cout << "interest sent" << std::endl;
+}
 void retransmitPitTable(Ptr<Node> node, string prefix) {
+  retransmitPitTable(node, prefix, "");
+}
+void retransmitPitTable(Ptr<Node> node, string prefix, std::string hint) {
   Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
   // std::shared_ptr<nfd::Forwarder> fw = ndn->getForwarder();
   // ndn::nfd::pit::Pit pit = fw->getPit();
@@ -97,6 +112,12 @@ void retransmitPitTable(Ptr<Node> node, string prefix) {
     for (auto i : fi.getNextHops()) {
       cout << "  PIT ADDED - " << fullName << "," << i.getFace().getId() << endl;
       ndn::Interest interest = ndn::Interest(fullName, interestLifeTime);
+      // Attach a hint if exist
+      if (hint.size() > 0) {
+        vector<ndn::Name> del;
+        del.emplace_back(ndn::Name(hint));
+        interest.setForwardingHint(del);
+      }
       it->insertOrUpdateOutRecord(i.getFace(), interest);
       // Retransmit interest based on what's left in the pit with new face from fib.
       i.getFace().sendInterest(interest);
@@ -419,7 +440,7 @@ void RemoveExistingLink(Ptr<Node> node, string prefix, shared_ptr<ns3::ndn::Face
 }
 
 void AddRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
-                string prefix, ns3::Ptr<ns3::Node> otherNode, int otherDeviceId, shared_ptr<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address> >> curNextHop)
+                string prefix, ns3::Ptr<ns3::Node> otherNode, int otherDeviceId, shared_ptr<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address, ns3::Ptr<ns3::Node> > >> curNextHop)
 {
   NS_ASSERT_MSG(deviceId < node->GetNDevices(), "Source device ID must be valid");
   NS_ASSERT_MSG(otherDeviceId < otherNode->GetNDevices(), "Next hop device ID must be valid");
@@ -428,6 +449,7 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
   Ptr<PointToPointLaserNetDevice> remoteNetDevice = DynamicCast<PointToPointLaserNetDevice>(otherNode->GetDevice(otherDeviceId));
   Ptr<ns3::ndn::L3Protocol> ndn = node->GetObject<ns3::ndn::L3Protocol>();
   Ptr<ns3::ndn::L3Protocol> remoteNdn = otherNode->GetObject<ns3::ndn::L3Protocol>();
+  ns3::Ptr<ns3::Node> oldNode;
   NS_ASSERT_MSG(ndn != 0, "Ndn stack should be installed on the node");
 
   shared_ptr<ns3::ndn::Face> face = ndn->getFaceByNetDevice(netDevice);
@@ -439,8 +461,12 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
   if (curNextHop->find(p) != curNextHop->end()) {
     shared_ptr<ns3::ndn::Face> prevCurFace, prevNextFace;
     Address prevDest;
-    tie(prevCurFace, prevNextFace, prevDest) = (*curNextHop)[p];
+    tie(prevCurFace, prevNextFace, prevDest, oldNode) = (*curNextHop)[p];
     ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, face, prevCurFace, prevNextFace, prevDest);
+    // If switch from GSL to ISL, retransmit all pending interests
+    if (prevCurFace->getLinkType() == ::ndn::nfd::LINK_TYPE_AD_HOC) {
+      ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &sendNackOrRetransmit, node, ndn::nfd::FaceEndpoint(*prevCurFace, prevCurFace->getId()), prefix);
+    }
   }
   // Get delay value
   Ptr<MobilityModel> senderMobility = node->GetObject<MobilityModel>();
@@ -450,7 +476,7 @@ void AddRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
   // ns3::Simulator::Schedule(ns3::Seconds(HANDOVER_DURATION), &AddRouteCustom, node, prefix, face, distance);
   // ns3::ndn::FibHelper::AddRoute(node, prefix, face, 1);
   // Add the current route for future removal
-  (*curNextHop)[p] = make_tuple(face, remoteFace, netDevice->GetAddress());
+  (*curNextHop)[p] = make_tuple(face, remoteFace, netDevice->GetAddress(), otherNode);
 }
 
 void SetRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
@@ -483,7 +509,14 @@ void SetRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
 }
 
 void AddRouteGSL(ns3::Ptr<ns3::Node> node, int deviceId,
-                string prefix, ns3::Ptr<ns3::Node> otherNode, int otherDeviceId, shared_ptr<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address> >> curNextHop)
+                string prefix, ns3::Ptr<ns3::Node> otherNode,
+                int otherDeviceId, shared_ptr<map<pair<uint32_t, string>,
+                tuple<shared_ptr<ns3::ndn::Face>,
+                  shared_ptr<ns3::ndn::Face>,
+                  Address,
+                  ns3::Ptr<ns3::Node>
+                > >> curNextHop,
+                int retx)
 {
   // Prevent legacy dynamic state to create more GSLs than needed
   if (deviceId >= node->GetNDevices()) {
@@ -532,6 +565,7 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, int deviceId,
   // Remove route -> Add route -> Remove backward link
   auto p = make_pair(node->GetId(), prefix);
   shared_ptr<ns3::ndn::Face> prevCurFace, prevNextFace;
+  ns3::Ptr<ns3::Node> oldNode;
   Address prevDest;
   // Get delay value
   Ptr<MobilityModel> senderMobility = node->GetObject<MobilityModel>();
@@ -541,25 +575,34 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, int deviceId,
   if (node == gsNode) {
     // gs -> sat
     // Remove existing route
-    if (curNextHop->find(p) != curNextHop->end()) {
-      tie(prevCurFace, prevNextFace, prevDest) = (*curNextHop)[p];
-      ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, gsFace, prevCurFace, prevNextFace, prevDest);
-    }
     AddRouteCustom(gsNdn->getForwarder()->getFib(), node, prefix, gsFace, distance);
+    if (curNextHop->find(p) != curNextHop->end()) {
+      tie(prevCurFace, prevNextFace, prevDest, oldNode) = (*curNextHop)[p];
+      ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, gsFace, prevCurFace, prevNextFace, prevDest);
+      // Retransmit Interest with or without Hint
+      if (retx >= 1) {
+        if (retx == 2) {
+          string prefix = "/leo/" + to_string(oldNode->GetId());
+          retransmitPitTable(gsNode, prefix, prefix);
+        } else {
+          retransmitPitTable(gsNode, prefix);
+        }
+      }
+    }
     // ns3::Simulator::Schedule(ns3::Seconds(HANDOVER_DURATION), &AddRouteCustom, node, prefix, gsFace, distance);
     // Add the current route for future removal
-    (*curNextHop)[p] = make_tuple(gsFace, satFace, gsNetDevice->GetAddress());
+    (*curNextHop)[p] = make_tuple(gsFace, satFace, gsNetDevice->GetAddress(), otherNode);
   } else {
     // sat -> gs
+    AddRouteCustom(satNdn->getForwarder()->getFib(), node, prefix, satFace, distance);
     if (curNextHop->find(p) != curNextHop->end()) {
       tie(prevCurFace, prevNextFace, prevDest) = (*curNextHop)[p];
       // ns3::ndn::FibHelper::RemoveRoute(node, prefix, prevCurFace);
       ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, satFace, prevCurFace, prevNextFace, prevDest);
     }
-    AddRouteCustom(satNdn->getForwarder()->getFib(), node, prefix, satFace, distance);
     // ns3::Simulator::Schedule(ns3::Seconds(HANDOVER_DURATION), &AddRouteCustom, node, prefix, satFace, distance);
     // Add the current route for future removal
-    (*curNextHop)[p] = make_tuple(satFace, gsFace, satNetDevice->GetAddress());
+    (*curNextHop)[p] = make_tuple(satFace, gsFace, satNetDevice->GetAddress(), otherNode);
   }
 }
 
@@ -751,13 +794,14 @@ void ReinstallGSL(ns3::NodeContainer gsNodes, ns3::NodeContainer satNodes) {
   }
 }
 
+// Complete means dynamic state is "complete"
 void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, int retx, bool complete) {
-  ImportDynamicStateSat(nodes, dname, retx, complete, -1);
+  ImportDynamicStateSat(nodes, dname, retx, complete, hint, -1);
 }
 
 void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, int retx, bool complete, double limit) {
   // Construct a  link inference from dynamic state
-  m_cur_next_hop = make_shared<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address> >> ();
+  m_cur_next_hop = make_shared<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address, ns3::Ptr<ns3::Node> > >> ();
   // Iterate through the dynamic state directory
   for (const auto & entry : filesystem::directory_iterator(dname)) {
     // Extract nanoseconds from file name
@@ -794,9 +838,9 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
       prefix = "/leo/" + result[1];
 
       // Do client instant retransmission
-      if (current_node >= m_satelliteNodes.GetN() && retx == 1) {
-        ns3::Simulator::ScheduleWithContext(current_node, ns3::MilliSeconds(ms), &retransmitPitTable, nodes.Get(current_node), prefix);
-      }
+      // if (current_node >= m_satelliteNodes.GetN() && retx == 1) {
+      //   ns3::Simulator::ScheduleWithContext(current_node, ns3::MilliSeconds(ms), &retransmitPitTable, nodes.Get(current_node), prefix);
+      // }
       // cout << ms / 1000 << "Add Route: " << current_node << "," << prefix << "," << next_hop << endl;
       if (complete) {
         // cout << "Add Route at" << (ns3::MilliSeconds(counter / 100) + ns3::NanoSeconds(counter % 100)).GetNanoSeconds() << endl;
@@ -810,7 +854,7 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
       } else {
         if (current_node >= m_satelliteNodes.GetN() || next_hop >= m_satelliteNodes.GetN()) {
           ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteGSL, nodes.Get(current_node), stoi(result[3]),
-                                  prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop);
+                                  prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop, retx);
         } else {
           ns3::Simulator::Schedule(ns3::MilliSeconds(ms), &AddRouteISL, nodes.Get(current_node), stoi(result[3]),
                                   prefix, nodes.Get(next_hop), stoi(result[4]), m_cur_next_hop);
