@@ -81,6 +81,12 @@ for run in get_ndn_run_list():
             "NS_LOG=ndn.ConsumerPing:ndn.Consumer:ndn.Producer ./waf --run=\"a_b_test_hint --run_dir='" + run["name"] + "'\" "
             "2>&1 | tee '" + 'experiments/a_b/' + logs_ns3_dir + "/console.txt'"
         )
+    elif (run["ndn_client"] == "PingNackRetxHint"):
+        commands_to_run.append(
+            "cd ../../; "
+            "./waf --run=\"a_b_ping_nack_retx_hint --run_dir='" + run["name"] + "'\" "
+            "2>&1 | tee '" + 'experiments/a_b/' + logs_ns3_dir + "/console.txt'"
+    )
 
 # Compiling
 print("Compiling")
