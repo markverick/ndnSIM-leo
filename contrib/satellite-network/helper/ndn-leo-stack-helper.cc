@@ -37,8 +37,7 @@
 #endif // HAVE_NS3_VISUALIZER
 
 #include "ns3/ndnSIM/model/ndn-l3-protocol.hpp"
-// #include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
-#include "ns3/ndn-multicast-net-device-transport.h"
+#include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
 #include <ndn-cxx/encoding/nfd-constants.hpp>
 #include "utils/ndn-time.hpp"
 #include "utils/dummy-keychain.hpp"

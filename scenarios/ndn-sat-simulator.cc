@@ -421,7 +421,7 @@ void RemoveExistingLink(Ptr<Node> node, string prefix, shared_ptr<ns3::ndn::Face
 void AddRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
                 string prefix, ns3::Ptr<ns3::Node> otherNode, int otherDeviceId, shared_ptr<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address> >> curNextHop)
 {
-  NS_ASSERT_MSG(deviceId < node->GetNDevices(), "Sorce device ID must be valid");
+  NS_ASSERT_MSG(deviceId < node->GetNDevices(), "Source device ID must be valid");
   NS_ASSERT_MSG(otherDeviceId < otherNode->GetNDevices(), "Next hop device ID must be valid");
 
   Ptr<PointToPointLaserNetDevice> netDevice = DynamicCast<PointToPointLaserNetDevice>(node->GetDevice(deviceId));
