@@ -44,6 +44,8 @@ ds_alg = {}
 ds_alg['paired'] = "starlink_550_isls_plus_grid_ground_stations_4_different_orbits_algorithm_paired_many_only_over_isls"
 ds_alg['free'] = "starlink_550_isls_plus_grid_ground_stations_4_different_orbits_fast_algorithm_free_one_only_over_isls"
 ds_alg['paired_all'] = "starlink_550_isls_plus_grid_ground_stations_4_different_orbits_algorithm_paired_all_pair_over_isls"
+ds_alg['flatten31'] = "flatten31"
+ds_alg['flatten59'] = "flatten59"
 
 # dynamic state sub folder in scenarios/data/<dynamic_state>/<ds>
 ds = "dynamic_state_100ms_for_200s"
@@ -72,7 +74,9 @@ cc_list = ["TcpNewReno", "TcpCubic", "TcpVegas","TcpBbr"]
 #                   just like Fixed window but with nack-retx strategy.
 # TestHint - experiments/scenarios/runs/a_b_test_hint.cc:
 #            for testing a single instant of an interest with a forwarding hint
-ndn_clients = ["TestHint"]
+# PingNackRetxHint - experiments/scenarios/runs/a_b_ping_nack_retx_hint.cc:
+#            nack-retx with instant transmission with FH
+ndn_clients = ["PingNackRetxHint"]
 
 # consumer vs producer pair
 pairs = [
@@ -105,10 +109,10 @@ chosen_pairs = []
 for nc in ndn_clients:
     for p in pairs:
         if (len(ratios) == 0):
-            chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "paired_all", 0, 0, p[2]))
+            chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "flatten59", 0, 0, p[2]))
         else:
             for r in ratios:
-                chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "paired_all", float(r), float(r), p[2]))
+                chosen_pairs.append(("starlink_550_isls", p[0], p[1], nc, "flatten59", float(r), float(r), p[2]))
 
 
 def get_ndn_run_list():

@@ -577,6 +577,7 @@ void AddRouteGSL(ns3::Ptr<ns3::Node> node, int deviceId,
       tie(prevCurFace, prevNextFace, prevDest, oldNode) = (*curNextHop)[p];
       ns3::Simulator::Schedule(ns3::Seconds(DELAYED_REMOVAL), &RemoveExistingLink, node, prefix, gsFace, prevCurFace, prevNextFace, prevDest);
       // Retransmit Interest with or without Hint
+      std::cout << CONSUMER_RETX_TYPE << std::endl; 
       if (CONSUMER_RETX_TYPE >= 1) {
         if (CONSUMER_RETX_TYPE == 2) {
           string hint = "/leo/" + to_string(oldNode);
@@ -799,7 +800,7 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
 void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, int retx, bool complete, double limit) {
   // Construct a  link inference from dynamic state
   CONSUMER_RETX_TYPE = retx;
-  m_cur_next_hop = shared_ptr<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address, int > >> ();
+  m_cur_next_hop = make_shared<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address, int > >> ();
   // Iterate through the dynamic state directory
   for (const auto & entry : filesystem::directory_iterator(dname)) {
     // Extract nanoseconds from file name
@@ -812,7 +813,7 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
       continue; 
     }
     double ms = stod(match[1]) / 1000000;
-    if (limit >= 0 && ms > limit * 1000) {
+    if (limit >= 59 && ms > limit * 1000) {
       continue;
     }
     int64_t current_node;
