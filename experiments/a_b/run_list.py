@@ -74,7 +74,8 @@ ndn_clients = ["ISLTwoPathPing"]
 
 # consumer vs producer pair
 pairs = [
-    (1584 + 0, 1584 + 1, 'Sao-Paulo 11000k'),
+    (50, 500, '50-500'),
+    # (1584 + 0, 1584 + 1, 'Sao-Paulo 11000k'),
     # (1584 + 2, 1584 + 3, 'San-Jose 11000k'),
     # (1584 + 4, 1584 + 5, 'Montreal 11000k'),
     # (1584 + 6, 1584 + 7, 'Victoria 11000k'),

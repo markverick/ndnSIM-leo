@@ -72,9 +72,9 @@ public:
 
   void ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, int retx, bool complete, double limit);
 
-  void PopulateISLRoute(ns3::NodeContainer satNodes, int orbit_num, bool phase_shift);
+  void PopulateISLRoute(ns3::NodeContainer satNodes, int orbit_num);
 
-  int GetOrbitId(int sat_id, int orbit_num, bool phase_shift);
+  pair<int,int> GetPos(int sat_id, int orbit_num);
   // Input
   std::string m_satellite_network_dir;          //<! Directory containing satellite network information
   std::string m_satellite_network_routes_dir;   //<! Directory containing the routes over time of the network

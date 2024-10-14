@@ -35,7 +35,7 @@ public:
 
     cout << "Setting up FIB schedules..."  << endl;
 
-    PopulateISLRoute(m_satelliteNodes, 22, true);
+    PopulateISLRoute(m_satelliteNodes, 72);
 
     cout << "Starting the simulation"  << endl;
     Simulator::Stop(Seconds(200));

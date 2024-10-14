@@ -408,7 +408,7 @@ void RemoveExistingLink(Ptr<Node> node, string prefix, shared_ptr<ns3::ndn::Face
 void AddRouteISL(ns3::Ptr<ns3::Node> node, int deviceId,
                 string prefix, ns3::Ptr<ns3::Node> otherNode, int otherDeviceId, shared_ptr<map<pair<uint32_t, string>, tuple<shared_ptr<ns3::ndn::Face>, shared_ptr<ns3::ndn::Face>, Address> >> curNextHop)
 {
-  NS_ASSERT_MSG(deviceId < node->GetNDevices(), "Sorce device ID must be valid");
+  NS_ASSERT_MSG(deviceId < node->GetNDevices(), "Source device ID must be valid");
   NS_ASSERT_MSG(otherDeviceId < otherNode->GetNDevices(), "Next hop device ID must be valid");
 
   Ptr<PointToPointLaserNetDevice> netDevice = DynamicCast<PointToPointLaserNetDevice>(node->GetDevice(deviceId));
@@ -798,44 +798,93 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
   std::cout << std::endl;
 }
 
-// Get 
-int NDNSatSimulator::GetOrbitId(int sat_id, int orbit_num, bool phase_shift) {
-  return sat_id / orbit_num;
-
+// Get a pair of topological coordinate
+pair<int, int> NDNSatSimulator::GetPos(int satId, int n_satPerOrbit) {
+  return make_pair(satId / n_satPerOrbit, satId % n_satPerOrbit);
 }
 
-void NDNSatSimulator::PopulateISLRoute(ns3::NodeContainer satNodes, int orbit_num, bool phase_shift) {
+// Go up for tiebreaker
+int IncrementalDist(int dest, int source, int bound) {
+  if (dest < source) {
+    dest += bound;
+  }
+  if ((dest - source) == ((source - dest + bound) % bound)) {
+    return 0;
+  } else if ((dest - source) < ((source - dest + bound) % bound)) {
+    return 1;
+  }
+  return -1;
+}
+
+pair<int,int> PairedSum(pair<int,int> a, pair<int,int> b) {
+  return make_pair(a.first + b.first, a.second + b.second);
+}
+
+
+void NDNSatSimulator::PopulateISLRoute(ns3::NodeContainer satNodes, int n_orbit) {
   int n_sat = satNodes.GetN();
-  for(int i = 0; i < 4; i++) {
-    Ptr<PointToPointLaserNetDevice> dev = DynamicCast<PointToPointLaserNetDevice>(satNodes.Get(0)->GetDevice(i));
-    auto channel = dev->GetChannel();
-    int x = channel->GetDevice(0)->GetNode()->GetId();
-    int y = channel->GetDevice(1)->GetNode()->GetId();
-    cout << "Dev0 : " << x << " <-> " << y << endl;
+  int n_satPerOrbit = n_sat / n_orbit;
+  // for(int i = 0; i < 4; i++) {
+  //   Ptr<PointToPointLaserNetDevice> dev = DynamicCast<PointToPointLaserNetDevice>(satNodes.Get(0)->GetDevice(i));
+  //   auto channel = dev->GetChannel();
+  //   int x = channel->GetDevice(0)->GetNode()->GetId();
+  //   int y = channel->GetDevice(1)->GetNode()->GetId();
+  //   cout << "Dev0 : " << x << " <-> " << y << endl;
+  // }
+  std::string basePrefix = "/leo/uid-";
+  int a, b, x, y, dx, dy, nx, ny, px, py;
+  auto destNode = satNodes.Get(m_node2_id);
+  std::string prefix = basePrefix + to_string(m_node2_id);
+  tie(a, b) = GetPos(m_node2_id, n_satPerOrbit);
+  for (int sourceId = 0; sourceId < satNodes.GetN(); sourceId++) {
+    // Filter out self loop
+    if (m_node2_id == sourceId) continue;
+    auto sourceNode = satNodes.Get(sourceId);
+    tie(x, y) = GetPos(sourceId, n_satPerOrbit);
+    dx = IncrementalDist(a, x, n_orbit);
+    dy = IncrementalDist(b, y, n_satPerOrbit);
+    Ptr<ns3::ndn::L3Protocol> sourceNdn = sourceNode->GetObject<ns3::ndn::L3Protocol>();
+    NS_ASSERT_MSG(sourceNode->GetNDevices() >= 4, "ISL devices should be installed");
+    // cout << "Node: " << sourceId << endl;
+    for (int j = 0; j < 4; j++) {
+      Ptr<PointToPointLaserNetDevice> dev = DynamicCast<PointToPointLaserNetDevice>(sourceNode->GetDevice(j));
+      auto channel = dev->GetChannel();
+      int nodeIdFromDev1 = channel->GetDevice(0)->GetNode()->GetId();
+      int nodeIdFromDev2 = channel->GetDevice(1)->GetNode()->GetId();
+      shared_ptr<ns3::ndn::Face> nextFace;
+      // Get other node id
+      int nextId;
+      if (sourceId == nodeIdFromDev1) {
+        nextId = nodeIdFromDev2;
+        nextFace = sourceNdn->getFaceByNetDevice(sourceNode->GetDevice(1));
+      } else {
+        nextId = nodeIdFromDev1;
+        nextFace = sourceNdn->getFaceByNetDevice(sourceNode->GetDevice(0));
+      }
+      // cout << sourceId << ", " << nextId << endl;
+      tie (nx, ny) = GetPos(nextId, n_satPerOrbit);
+      // cout << "(" << x << "," << y << "), (" << nx << "," << ny << ") >> (" << dx << "," << dy << ")"  << endl;
+      // See which net device should be the next hops, only one for one axis
+      px = (x + dx + n_orbit) % n_orbit;
+      py = (y + dy + n_satPerOrbit) % n_satPerOrbit;
+      if (dx == 0) {
+        if (py == ny) {
+          // cout << "y axis" << endl;
+          ns3::Simulator::Schedule(ns3::Seconds(1), &AddRouteCustom, sourceNode, prefix, nextFace, 1);
+          break;
+        }
+      } else if (dy == 0) {
+        if (px == nx) {
+          // cout << "x axis" << endl;
+          ns3::Simulator::Schedule(ns3::Seconds(1), &AddRouteCustom, sourceNode, prefix, nextFace, 1);
+          break;
+        }
+      } else if (px == nx || py == ny) {
+        // cout << "both x and y axis" << endl;
+        ns3::Simulator::Schedule(ns3::Seconds(1), &AddRouteCustom, sourceNode, prefix, nextFace, 1);
+      }
+    }
   }
-  for(int i = 0; i < 4; i++) {
-    Ptr<PointToPointLaserNetDevice> dev = DynamicCast<PointToPointLaserNetDevice>(satNodes.Get(21)->GetDevice(i));
-    auto channel = dev->GetChannel();
-    int x = channel->GetDevice(0)->GetNode()->GetId();
-    int y = channel->GetDevice(1)->GetNode()->GetId();
-    cout << "Dev21 : " << x << " <-> " << y << endl;
-  }
-  for(int i = 0; i < 4; i++) {
-    Ptr<PointToPointLaserNetDevice> dev = DynamicCast<PointToPointLaserNetDevice>(satNodes.Get(22)->GetDevice(i));
-    auto channel = dev->GetChannel();
-    int x = channel->GetDevice(0)->GetNode()->GetId();
-    int y = channel->GetDevice(1)->GetNode()->GetId();
-    cout << "Dev22 : " << x << " <-> " << y << endl;
-  }
-  for(int i = 0; i < 4; i++) {
-    Ptr<PointToPointLaserNetDevice> dev = DynamicCast<PointToPointLaserNetDevice>(satNodes.Get(43)->GetDevice(i));
-    auto channel = dev->GetChannel();
-    int x = channel->GetDevice(0)->GetNode()->GetId();
-    int y = channel->GetDevice(1)->GetNode()->GetId();
-    cout << "Dev43 : " << x << " <-> " << y << endl;
-  }
-  
-  int orbit = GetOrbitId(0, orbit_num, phase_shift);
 }
 
 void ForceTimeout(Ptr<ndn::Consumer> app) {
