@@ -70,7 +70,7 @@ cc_list = ["TcpNewReno", "TcpCubic", "TcpVegas","TcpBbr"]
 #               one client sends interests, allowing fixed-window pending interests. Use default rtt estimator for retransmission timer. Use custom ConsumerFixedWindow client
 # FixedWindowRetx - experiments/scenarios/runs/a_b_fixed_window_retx.cc:
 #                   just like Fixed window but with nack-retx strategy.
-ndn_clients = ["Ping"]
+ndn_clients = ["ISLTwoPathPing"]
 
 # consumer vs producer pair
 pairs = [

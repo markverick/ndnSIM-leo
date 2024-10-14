@@ -798,6 +798,46 @@ void NDNSatSimulator::ImportDynamicStateSat(ns3::NodeContainer nodes, string dna
   std::cout << std::endl;
 }
 
+// Get 
+int NDNSatSimulator::GetOrbitId(int sat_id, int orbit_num, bool phase_shift) {
+  return sat_id / orbit_num;
+
+}
+
+void NDNSatSimulator::PopulateISLRoute(ns3::NodeContainer satNodes, int orbit_num, bool phase_shift) {
+  int n_sat = satNodes.GetN();
+  for(int i = 0; i < 4; i++) {
+    Ptr<PointToPointLaserNetDevice> dev = DynamicCast<PointToPointLaserNetDevice>(satNodes.Get(0)->GetDevice(i));
+    auto channel = dev->GetChannel();
+    int x = channel->GetDevice(0)->GetNode()->GetId();
+    int y = channel->GetDevice(1)->GetNode()->GetId();
+    cout << "Dev0 : " << x << " <-> " << y << endl;
+  }
+  for(int i = 0; i < 4; i++) {
+    Ptr<PointToPointLaserNetDevice> dev = DynamicCast<PointToPointLaserNetDevice>(satNodes.Get(21)->GetDevice(i));
+    auto channel = dev->GetChannel();
+    int x = channel->GetDevice(0)->GetNode()->GetId();
+    int y = channel->GetDevice(1)->GetNode()->GetId();
+    cout << "Dev21 : " << x << " <-> " << y << endl;
+  }
+  for(int i = 0; i < 4; i++) {
+    Ptr<PointToPointLaserNetDevice> dev = DynamicCast<PointToPointLaserNetDevice>(satNodes.Get(22)->GetDevice(i));
+    auto channel = dev->GetChannel();
+    int x = channel->GetDevice(0)->GetNode()->GetId();
+    int y = channel->GetDevice(1)->GetNode()->GetId();
+    cout << "Dev22 : " << x << " <-> " << y << endl;
+  }
+  for(int i = 0; i < 4; i++) {
+    Ptr<PointToPointLaserNetDevice> dev = DynamicCast<PointToPointLaserNetDevice>(satNodes.Get(43)->GetDevice(i));
+    auto channel = dev->GetChannel();
+    int x = channel->GetDevice(0)->GetNode()->GetId();
+    int y = channel->GetDevice(1)->GetNode()->GetId();
+    cout << "Dev43 : " << x << " <-> " << y << endl;
+  }
+  
+  int orbit = GetOrbitId(0, orbit_num, phase_shift);
+}
+
 void ForceTimeout(Ptr<ndn::Consumer> app) {
   app->ForceTimeout();
 }

@@ -39,8 +39,8 @@
 #include "ns3/wifi-net-device.h"
 #include "ns3/point-to-point-laser-net-device.h"
 #include "ns3/ipv4.h"
-// #include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
-#include "ns3/ndn-multicast-net-device-transport.h"
+#include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
+// #include "ns3/ndn-multicast-net-device-transport.h"
 #include "ns3/ndn-leo-stack-helper.h"
 
 namespace ns3 {
@@ -72,6 +72,9 @@ public:
 
   void ImportDynamicStateSat(ns3::NodeContainer nodes, string dname, int retx, bool complete, double limit);
 
+  void PopulateISLRoute(ns3::NodeContainer satNodes, int orbit_num, bool phase_shift);
+
+  int GetOrbitId(int sat_id, int orbit_num, bool phase_shift);
   // Input
   std::string m_satellite_network_dir;          //<! Directory containing satellite network information
   std::string m_satellite_network_routes_dir;   //<! Directory containing the routes over time of the network
