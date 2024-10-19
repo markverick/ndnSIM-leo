@@ -387,6 +387,7 @@ void RemoveNextHop(ns3::ndn::NetDeviceTransport* ts, Address dest) {
 }
 
 void AddRouteCustom(ns3::Ptr<ns3::Node> node, string prefix, shared_ptr<ns3::ndn::Face> face, int32_t metric) {
+  // cout << "AddRoute: " << node->GetId() << ", " << prefix << ", " << face->getId() << ", " << metric << endl;
   ns3::ndn::FibHelper::AddRoute(node, prefix, face, metric);
 }
 
@@ -854,12 +855,11 @@ void NDNSatSimulator::PopulateISLRoute(ns3::NodeContainer satNodes, int n_orbit)
       shared_ptr<ns3::ndn::Face> nextFace;
       // Get other node id
       int nextId;
+      nextFace = sourceNdn->getFaceByNetDevice(sourceNode->GetDevice(j));
       if (sourceId == nodeIdFromDev1) {
         nextId = nodeIdFromDev2;
-        nextFace = sourceNdn->getFaceByNetDevice(sourceNode->GetDevice(1));
       } else {
         nextId = nodeIdFromDev1;
-        nextFace = sourceNdn->getFaceByNetDevice(sourceNode->GetDevice(0));
       }
       // cout << sourceId << ", " << nextId << endl;
       tie (nx, ny) = GetPos(nextId, n_satPerOrbit);
@@ -870,18 +870,18 @@ void NDNSatSimulator::PopulateISLRoute(ns3::NodeContainer satNodes, int n_orbit)
       if (dx == 0) {
         if (py == ny) {
           // cout << "y axis" << endl;
-          ns3::Simulator::Schedule(ns3::Seconds(1), &AddRouteCustom, sourceNode, prefix, nextFace, 1);
+          ns3::Simulator::Schedule(ns3::Seconds(0.5), &AddRouteCustom, sourceNode, prefix, nextFace, 1);
           break;
         }
       } else if (dy == 0) {
         if (px == nx) {
           // cout << "x axis" << endl;
-          ns3::Simulator::Schedule(ns3::Seconds(1), &AddRouteCustom, sourceNode, prefix, nextFace, 1);
+          ns3::Simulator::Schedule(ns3::Seconds(0.5), &AddRouteCustom, sourceNode, prefix, nextFace, 1);
           break;
         }
       } else if (px == nx || py == ny) {
         // cout << "both x and y axis" << endl;
-        ns3::Simulator::Schedule(ns3::Seconds(1), &AddRouteCustom, sourceNode, prefix, nextFace, 1);
+        ns3::Simulator::Schedule(ns3::Seconds(0.5), &AddRouteCustom, sourceNode, prefix, nextFace, 1);
       }
     }
   }

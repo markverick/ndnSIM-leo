@@ -17,7 +17,7 @@ public:
     std::string prefix1 = prefix + to_string(m_node1_id);
     std::string prefix2 = prefix + to_string(m_node2_id);
     m_prefix = prefix2;
-    // cout << "PREFIX: " << prefix2 << endl;
+    cout << "PREFIX: " << m_prefix << endl;
     // Consumer
     ndn::AppHelper consumerHelper("ns3::ndn::ConsumerPing");
     // Consumer will request /leo/0, /leo/1, ...

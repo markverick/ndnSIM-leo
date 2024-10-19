@@ -10,35 +10,33 @@ public:
   void Run() {
     // Choosing forwarding strategy
     std::cout << "  > Installing forwarding strategy" << std::endl;
-    ndn::StrategyChoiceHelper::Install(m_allNodes, "/", "/localhost/nfd/strategy/best-route");
+    ndn::StrategyChoiceHelper::Install(m_allNodes, "/", "/localhost/nfd/strategy/twopath");
     std::string prefix = "/leo/uid-";
     Ptr<Node> node1 = m_allNodes.Get(m_node1_id);
     Ptr<Node> node2 = m_allNodes.Get(m_node2_id);
     std::string prefix1 = prefix + to_string(m_node1_id);
     std::string prefix2 = prefix + to_string(m_node2_id);
     m_prefix = prefix2;
-    // cout << "PREFIX: " << prefix2 << endl;
+    cout << "PREFIX: " << prefix2 << endl;
     // Consumer
-    ndn::AppHelper consumerHelper("ns3::ndn::ConsumerPing");
+    ndn::AppHelper consumerHelper("ns3::ndn::ConsumerPcon");
     // Consumer will request /leo/0, /leo/1, ...
     consumerHelper.SetPrefix(m_prefix);
-    consumerHelper.SetAttribute("Frequency", StringValue("1000"));
-    consumerHelper.SetAttribute("RetxTimer", StringValue("10000s"));
-    consumerHelper.Install(node1).Start(Seconds(0.5)); // first node
+    consumerHelper.Install(node1).Start(Seconds(1)); // first node
 
     // Producer
     ndn::AppHelper producerHelper("ns3::ndn::Producer");
     // Producer will reply to all requests starting with prefix
     producerHelper.SetPrefix(m_prefix);
     producerHelper.SetAttribute("PayloadSize", StringValue("0"));
-    producerHelper.Install(node2).Start(Seconds(0.5)); // last node
+    producerHelper.Install(node2).Start(Seconds(1)); // last node
 
     cout << "Setting up FIB schedules..."  << endl;
 
-    PopulateISLRoute(m_satelliteNodes, 22);
+    PopulateISLRoute(m_satelliteNodes, 72);
 
     cout << "Starting the simulation"  << endl;
-    Simulator::Stop(Seconds(200));
+    Simulator::Stop(Seconds(10));
     // int start_index = -1;
     // for (int i = m_satellite_network_dir.size() - 1; i >= 0; i--) {
     //   char c = m_satellite_network_dir[i];
