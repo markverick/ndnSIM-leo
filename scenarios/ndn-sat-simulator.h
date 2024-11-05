@@ -39,8 +39,8 @@
 #include "ns3/wifi-net-device.h"
 #include "ns3/point-to-point-laser-net-device.h"
 #include "ns3/ipv4.h"
-// #include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
-#include "ns3/ndn-multicast-net-device-transport.h"
+#include "ns3/ndnSIM/model/ndn-net-device-transport.hpp"
+// #include "ns3/ndn-multicast-net-device-transport.h"
 #include "ns3/ndn-leo-stack-helper.h"
 
 namespace ns3 {
