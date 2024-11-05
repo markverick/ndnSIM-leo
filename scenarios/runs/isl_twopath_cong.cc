@@ -22,13 +22,15 @@ public:
     ndn::AppHelper consumerHelper("ns3::ndn::ConsumerPcon");
     // Consumer will request /leo/0, /leo/1, ...
     consumerHelper.SetPrefix(m_prefix);
+    consumerHelper.SetAttribute("RetxTimer", StringValue("2s"));
+    consumerHelper.SetAttribute("PayloadSize", StringValue("1040"));
     consumerHelper.Install(node1).Start(Seconds(1)); // first node
 
     // Producer
     ndn::AppHelper producerHelper("ns3::ndn::Producer");
     // Producer will reply to all requests starting with prefix
     producerHelper.SetPrefix(m_prefix);
-    producerHelper.SetAttribute("PayloadSize", StringValue("0"));
+    producerHelper.SetAttribute("PayloadSize", StringValue("1040"));
     producerHelper.Install(node2).Start(Seconds(1)); // last node
 
     cout << "Setting up FIB schedules..."  << endl;
@@ -36,7 +38,7 @@ public:
     PopulateISLRoute(m_satelliteNodes, 72);
 
     cout << "Starting the simulation"  << endl;
-    Simulator::Stop(Seconds(10));
+    Simulator::Stop(Seconds(200));
     // int start_index = -1;
     // for (int i = m_satellite_network_dir.size() - 1; i >= 0; i--) {
     //   char c = m_satellite_network_dir[i];
