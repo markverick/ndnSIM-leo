@@ -23,6 +23,7 @@ The goal is to simulate the NDN traffic on LEO satellites with accurate delays a
 ## Installation
 ```
 git submodule update --recursive --init
+bash hypatia_install_dependencies.sh
 ./waf configure --enable-mpi
 ```
 
